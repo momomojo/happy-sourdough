@@ -176,3 +176,164 @@ npx tsc --noEmit
 2. Run migrations from `happy-sourdough:bakery-schema` skill
 3. Set up Stripe test account and add credentials
 4. Run `npm run dev` to start development
+
+---
+
+## ⚠️ CODEBASE STATUS (Last Reviewed: 2025-12-06)
+
+**Status: NOT PRODUCTION READY - Critical Schema Mismatches**
+
+### Critical Issues Requiring Immediate Fix
+
+| Issue | Location | Impact |
+|-------|----------|--------|
+| `variant_id` vs `product_variant_id` | `src/app/api/checkout/route.ts:180`, types | Order item creation fails |
+| `delivery_type` vs `fulfillment_type` | `types/database.ts:93`, all order code | Order queries fail |
+| `tax` vs `tax_amount` | Order type & checkout | Order total calculations wrong |
+| `slot_type` vs `delivery_type` | `lib/supabase/delivery.ts:57,143` | Time slot filtering fails |
+| `window_start/end` vs `start_time/end_time` | `lib/supabase/delivery.ts:58` | Time slot queries fail |
+| `price_adjustment` vs `price` | ProductVariant type | Variant pricing broken |
+| `delivery_zones.id` UUID vs numeric | Types + checkout route | Zone lookups fail |
+| `min_order` vs `min_order_amount` | DeliveryZone type | Minimum order checks fail |
+| Guest user `user_id: 'guest'` | checkout route:67 | FK constraint violation |
+| Missing `stripe_checkout_session_id` column | Schema vs code | Session tracking fails |
+| Missing `picked_up` status in types | OrderStatus type | Status enum incomplete |
+| Missing `decrement_slot_orders` RPC | Schema functions | Slot release fails |
+
+### Incomplete Features
+- **Homepage**: Default Next.js placeholder (not bakery-branded)
+- **Discount codes**: TODO comment, not implemented
+- **Admin user tracking**: Status history `changed_by` always null
+- **Time slot reservation**: Not called during checkout
+
+### Code Quality Notes
+- 23 instances of `as any` type casting (type safety gaps)
+- Hardcoded 8% tax rate (should be configurable)
+- Hardcoded ZIP-to-zone mapping (mock data)
+- Email send failures don't block order completion
+
+---
+
+## 🗺️ MASTER PLAN: Production-Ready Roadmap
+
+### Phase 1: Fix Critical Blockers (Before Any Feature Work)
+**Goal**: Make existing vibe-coded features actually work
+
+1. **Schema Alignment**
+   - Update `types/database.ts` to match actual SQL schema exactly
+   - Fix all field name mismatches across codebase
+   - Add missing `stripe_checkout_session_id` to schema OR remove from code
+   - Add `picked_up` to OrderStatus type
+   - Add `decrement_slot_orders` RPC function to schema
+
+2. **Guest Checkout Fix**
+   - Use nullable `user_id` with `guest_email` for anonymous orders
+   - Update order creation to handle both authenticated and guest
+
+3. **Remove Type Casting**
+   - Replace `as any` with proper types throughout
+   - Ensure TypeScript strict mode catches all issues
+
+4. **Validation**: Run `npx tsc --noEmit` with zero errors
+
+### Phase 2: Core Flow Validation
+**Goal**: End-to-end checkout works with real Supabase + Stripe
+
+1. **Checkout Flow**
+   - Products → Add to Cart → Checkout form → Stripe → Webhook → Confirmation
+   - Time slot reservation on order creation
+   - Proper error handling and rollback
+
+2. **Admin Order Management**
+   - View orders, update status, track history
+   - Production list generation works
+
+3. **E2E Tests Pass**
+   - All 4 test suites green: products, cart, checkout, admin
+   - CI pipeline runs successfully
+
+### Phase 3: Homepage & Polish
+**Goal**: Customer-facing experience complete
+
+1. **Bakery Homepage**
+   - Hero with bakery branding
+   - Featured products carousel
+   - Categories navigation
+   - Opening hours / About section
+
+2. **Mobile Optimization**
+   - Test all flows on mobile viewports
+   - Bottom sheet checkout on mobile
+
+3. **Email Templates**
+   - Verify all 3 email templates render correctly
+   - Test with real Resend in staging
+
+### Phase 4: Feature Expansion (Post-Stable)
+**Goal**: Add business-critical features with regression tests
+
+Each feature follows: Design → Implement → Test → Deploy
+
+| Feature | Priority | Dependencies |
+|---------|----------|--------------|
+| Discount/promo codes | High | Checkout stable |
+| Customer accounts | High | Auth flow |
+| Order history for customers | High | Customer accounts |
+| Loyalty program | Medium | Customer accounts |
+| Product inventory tracking | Medium | Admin dashboard |
+| Custom cake ordering | Medium | Lead time logic |
+| Multiple pickup locations | Low | Zone logic |
+| Subscription/recurring orders | Low | Stripe subscriptions |
+
+### Phase 5: Production Hardening
+**Goal**: Ready for real traffic
+
+1. **Security Audit**
+   - RLS policies tested
+   - Input sanitization on all forms
+   - Rate limiting on APIs
+
+2. **Monitoring & Logging**
+   - Error tracking (Sentry or similar)
+   - Webhook delivery monitoring
+   - Performance metrics
+
+3. **Documentation**
+   - API documentation
+   - Admin user guide
+   - Runbook for common issues
+
+---
+
+## 🧪 Testing Strategy
+
+### E2E Coverage Requirements
+| Flow | File | Status |
+|------|------|--------|
+| Product browsing | `tests/e2e/products.spec.ts` | ✅ Exists |
+| Cart operations | `tests/e2e/cart.spec.ts` | ✅ Exists |
+| Checkout flow | `tests/e2e/checkout.spec.ts` | ✅ Exists |
+| Admin dashboard | `tests/e2e/admin.spec.ts` | ✅ Exists |
+| Order tracking | - | ❌ Needs creation |
+| Email delivery | - | ❌ Needs creation |
+
+### Regression Testing Protocol
+Before merging any feature:
+1. Run `npm run build` - must pass
+2. Run `npx tsc --noEmit` - zero errors
+3. Run `npm run lint` - no new warnings
+4. Run `npm run test:e2e` - all tests pass
+5. Manual smoke test of checkout flow
+
+---
+
+## 📋 Current Sprint Focus
+
+**Active Work**: Phase 1 - Schema Alignment
+
+Priority order for fixes:
+1. `types/database.ts` - Single source of truth matching SQL
+2. `src/app/api/checkout/route.ts` - Order creation works
+3. `src/lib/supabase/delivery.ts` - Time slot queries work
+4. `supabase/migrations/004_fixes.sql` - Add missing DB objects
+5. All other files using wrong field names
