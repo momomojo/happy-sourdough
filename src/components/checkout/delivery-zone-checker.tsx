@@ -152,7 +152,7 @@ export function DeliveryZoneChecker({ subtotal, onZoneChange }: DeliveryZoneChec
                   <span>Minimum Order</span>
                 </div>
                 <div className="font-medium">
-                  ${zone.min_order_amount}
+                  ${zone.min_order}
                   {meetsMinimum ? (
                     <Check className="inline ml-2 h-4 w-4 text-green-600" />
                   ) : (
@@ -201,7 +201,7 @@ export function DeliveryZoneChecker({ subtotal, onZoneChange }: DeliveryZoneChec
             {!meetsMinimum && (
               <div className="pt-3 border-t">
                 <p className="text-sm text-destructive font-medium">
-                  Add ${(zone.min_order_amount - subtotal).toFixed(2)} more to meet the minimum order
+                  Add ${(zone.min_order - subtotal).toFixed(2)} more to meet the minimum order
                 </p>
               </div>
             )}

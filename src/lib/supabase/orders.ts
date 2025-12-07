@@ -1,23 +1,12 @@
 import { createClient } from './client';
-import type { Order, OrderItem, OrderStatus } from '@/types/database';
-
-export interface OrderStatusHistory {
-  id: string;
-  order_id: string;
-  status: OrderStatus;
-  changed_by: string | null;
-  notes: string | null;
-  created_at: string;
-}
+import type { Order, OrderItem, OrderStatus, OrderStatusHistory } from '@/types/database';
 
 export interface OrderWithDetails extends Order {
   items: (OrderItem & {
     product_name: string;
-    variant_name: string;
+    variant_name: string | null;
   })[];
   status_history: OrderStatusHistory[];
-  delivery_date?: string;
-  delivery_window?: string;
 }
 
 /**
@@ -28,16 +17,19 @@ export interface OrderWithDetails extends Order {
 export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDetails | null> {
   const supabase = createClient();
 
-  const { data: order, error: orderError } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: orderData, error: orderError } = await (supabase as any)
     .from('orders')
     .select('*')
     .eq('order_number', orderNumber)
     .single();
 
-  if (orderError || !order) {
+  if (orderError || !orderData) {
     console.error('Error fetching order:', orderError);
     return null;
   }
+
+  const order = orderData as Order;
 
   // Get order items with product details
   const items = await getOrderItems(order.id);
@@ -45,29 +37,10 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
   // Get status history
   const statusHistory = await getOrderStatusHistory(order.id);
 
-  // Get delivery time slot if applicable
-  let deliveryDate: string | undefined;
-  let deliveryWindow: string | undefined;
-
-  if (order.time_slot_id) {
-    const { data: timeSlot } = await supabase
-      .from('time_slots')
-      .select('date, start_time, end_time')
-      .eq('id', order.time_slot_id)
-      .single();
-
-    if (timeSlot) {
-      deliveryDate = timeSlot.date;
-      deliveryWindow = `${timeSlot.start_time} - ${timeSlot.end_time}`;
-    }
-  }
-
   return {
     ...order,
     items,
     status_history: statusHistory,
-    delivery_date: deliveryDate,
-    delivery_window: deliveryWindow,
   };
 }
 
@@ -78,7 +51,7 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
  */
 export async function getOrderItems(
   orderId: string
-): Promise<(OrderItem & { product_name: string; variant_name: string })[]> {
+): Promise<(OrderItem & { product_name: string; variant_name: string | null })[]> {
   const supabase = createClient();
 
   const { data: items, error } = await supabase
@@ -86,7 +59,7 @@ export async function getOrderItems(
     .select(`
       *,
       products:product_id (name),
-      product_variants:variant_id (name)
+      product_variants:product_variant_id (name)
     `)
     .eq('order_id', orderId);
 
@@ -96,17 +69,18 @@ export async function getOrderItems(
   }
 
   // Transform the data to flatten the nested structure
-  return (items || []).map((item: any) => ({
-    id: item.id,
-    order_id: item.order_id,
-    product_id: item.product_id,
-    variant_id: item.variant_id,
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.total_price,
-    special_instructions: item.special_instructions,
-    product_name: item.products?.name || 'Unknown Product',
-    variant_name: item.product_variants?.name || 'Standard',
+  return (items || []).map((item: Record<string, unknown>) => ({
+    id: item.id as string,
+    order_id: item.order_id as string,
+    product_id: item.product_id as string,
+    product_variant_id: item.product_variant_id as string | null,
+    product_name: item.product_name as string || (item.products as { name: string } | null)?.name || 'Unknown Product',
+    variant_name: item.variant_name as string | null || (item.product_variants as { name: string } | null)?.name || null,
+    quantity: item.quantity as number,
+    unit_price: item.unit_price as number,
+    total_price: item.total_price as number,
+    special_instructions: item.special_instructions as string | null,
+    created_at: item.created_at as string,
   }));
 }
 
@@ -129,7 +103,7 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
     return [];
   }
 
-  return data || [];
+  return (data || []) as OrderStatusHistory[];
 }
 
 /**
@@ -140,42 +114,25 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
 export async function getOrderById(orderId: string): Promise<OrderWithDetails | null> {
   const supabase = createClient();
 
-  const { data: order, error: orderError } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: orderData, error: orderError } = await (supabase as any)
     .from('orders')
     .select('*')
     .eq('id', orderId)
     .single();
 
-  if (orderError || !order) {
+  if (orderError || !orderData) {
     console.error('Error fetching order:', orderError);
     return null;
   }
 
+  const order = orderData as Order;
   const items = await getOrderItems(order.id);
   const statusHistory = await getOrderStatusHistory(order.id);
-
-  // Get delivery time slot if applicable
-  let deliveryDate: string | undefined;
-  let deliveryWindow: string | undefined;
-
-  if (order.time_slot_id) {
-    const { data: timeSlot } = await supabase
-      .from('time_slots')
-      .select('date, start_time, end_time')
-      .eq('id', order.time_slot_id)
-      .single();
-
-    if (timeSlot) {
-      deliveryDate = timeSlot.date;
-      deliveryWindow = `${timeSlot.start_time} - ${timeSlot.end_time}`;
-    }
-  }
 
   return {
     ...order,
     items,
     status_history: statusHistory,
-    delivery_date: deliveryDate,
-    delivery_window: deliveryWindow,
   };
 }

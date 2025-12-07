@@ -20,6 +20,7 @@ type OrderStatus =
   | 'ready'
   | 'out_for_delivery'
   | 'delivered'
+  | 'picked_up'
   | 'cancelled'
   | 'refunded';
 
@@ -79,6 +80,11 @@ const STATUS_INFO: Record<
     description: 'Your order has been delivered. Enjoy!',
     emoji: '🎊',
   },
+  picked_up: {
+    title: 'Picked Up',
+    description: 'Your order has been picked up. Enjoy!',
+    emoji: '🎊',
+  },
   cancelled: {
     title: 'Order Cancelled',
     description: 'Your order has been cancelled.',
@@ -122,7 +128,7 @@ export const OrderStatusUpdateEmail = ({
           </Text>
 
           <Section style={orderBox}>
-            <Text style={orderNumber}>
+            <Text style={orderNumberStyle}>
               Order #{orderNumber}
             </Text>
             <Text style={statusText}>
@@ -271,7 +277,7 @@ const orderBox = {
   margin: '30px 0',
 };
 
-const orderNumber = {
+const orderNumberStyle = {
   color: '#2C1810',
   fontSize: '24px',
   fontWeight: 'bold',

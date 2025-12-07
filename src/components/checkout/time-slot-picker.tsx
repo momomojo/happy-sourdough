@@ -209,7 +209,7 @@ export function TimeSlotPicker({ deliveryType, onSlotSelect, hasCake = false }: 
                           <Clock className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">
-                              {formatTimeRange(slot.start_time, slot.end_time)}
+                              {formatTimeRange(slot.window_start, slot.window_end)}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               <Users className="h-3 w-3 text-muted-foreground" />
@@ -248,7 +248,7 @@ export function TimeSlotPicker({ deliveryType, onSlotSelect, hasCake = false }: 
                 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </p>
               <p className="text-sm text-muted-foreground">
-                {formatTimeRange(selectedSlot.start_time, selectedSlot.end_time)}
+                {formatTimeRange(selectedSlot.window_start, selectedSlot.window_end)}
               </p>
             </div>
           </CardContent>

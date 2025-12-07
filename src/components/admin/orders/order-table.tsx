@@ -27,6 +27,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   ready: 'bg-green-500',
   out_for_delivery: 'bg-green-500',
   delivered: 'bg-green-600',
+  picked_up: 'bg-green-600',
   cancelled: 'bg-red-500',
   refunded: 'bg-red-600',
 };
@@ -40,11 +41,12 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   ready: 'Ready',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',
+  picked_up: 'Picked Up',
   cancelled: 'Cancelled',
   refunded: 'Refunded',
 };
 
-type SortField = 'order_number' | 'created_at' | 'total' | 'status' | 'delivery_type';
+type SortField = 'order_number' | 'created_at' | 'total' | 'status' | 'fulfillment_type';
 type SortDirection = 'asc' | 'desc';
 
 export function OrderTable({ orders }: OrderTableProps) {
@@ -76,8 +78,8 @@ export function OrderTable({ orders }: OrderTableProps) {
       case 'status':
         comparison = a.status.localeCompare(b.status);
         break;
-      case 'delivery_type':
-        comparison = a.delivery_type.localeCompare(b.delivery_type);
+      case 'fulfillment_type':
+        comparison = a.fulfillment_type.localeCompare(b.fulfillment_type);
         break;
     }
 
@@ -126,7 +128,7 @@ export function OrderTable({ orders }: OrderTableProps) {
               <SortButton field="status" label="Status" />
             </TableHead>
             <TableHead>
-              <SortButton field="delivery_type" label="Type" />
+              <SortButton field="fulfillment_type" label="Type" />
             </TableHead>
             <TableHead>Delivery Date/Time</TableHead>
             <TableHead className="text-right">Items</TableHead>
@@ -170,7 +172,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="capitalize">
-                  {order.delivery_type}
+                  {order.fulfillment_type}
                 </TableCell>
                 <TableCell>
                   {order.delivery_date ? (

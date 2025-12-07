@@ -24,6 +24,7 @@ export function VariantSelector({
   // If only one variant, show it as disabled selection
   if (variants.length === 1) {
     const variant = variants[0];
+    const variantPrice = basePrice + variant.price_adjustment;
     return (
       <div className="space-y-2">
         <Label>Size</Label>
@@ -31,7 +32,7 @@ export function VariantSelector({
           <div className="flex items-center justify-between">
             <span className="font-medium">{variant.name}</span>
             <span className="text-sm text-gray-600">
-              ${variant.price.toFixed(2)}
+              ${variantPrice.toFixed(2)}
             </span>
           </div>
         </div>
@@ -45,7 +46,7 @@ export function VariantSelector({
       <div className="grid grid-cols-1 gap-2">
         {variants.map((variant) => {
           const isSelected = variant.id === selectedVariantId;
-          const priceAdjustment = variant.price - basePrice;
+          const variantPrice = basePrice + variant.price_adjustment;
 
           return (
             <button
@@ -82,16 +83,11 @@ export function VariantSelector({
 
               <div className="text-right">
                 <div className="font-semibold">
-                  ${variant.price.toFixed(2)}
+                  ${variantPrice.toFixed(2)}
                 </div>
-                {variant.compare_at_price && variant.compare_at_price > variant.price && (
-                  <div className="text-xs text-gray-500 line-through">
-                    ${variant.compare_at_price.toFixed(2)}
-                  </div>
-                )}
-                {priceAdjustment !== 0 && (
+                {variant.price_adjustment !== 0 && (
                   <div className="text-xs text-gray-600">
-                    {priceAdjustment > 0 ? '+' : ''}${priceAdjustment.toFixed(2)}
+                    {variant.price_adjustment > 0 ? '+' : ''}${variant.price_adjustment.toFixed(2)}
                   </div>
                 )}
               </div>

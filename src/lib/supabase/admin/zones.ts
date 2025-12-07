@@ -8,7 +8,7 @@ export interface ZoneUpdateData {
   min_order_amount?: number;
   delivery_fee?: number;
   free_delivery_threshold?: number | null;
-  estimated_time_minutes?: number;
+  estimated_time_minutes?: number | null;
   is_active?: boolean;
   sort_order?: number;
 }
@@ -20,6 +20,9 @@ export interface TimeSlotCreateData {
   slot_type: 'pickup' | 'delivery' | 'both';
   max_orders: number;
 }
+
+// Template for bulk slot generation (date is added internally)
+export type TimeSlotTemplate = Omit<TimeSlotCreateData, 'date'>;
 
 /**
  * Get all delivery zones
@@ -46,7 +49,7 @@ export async function getZones(): Promise<DeliveryZone[]> {
  * @param zoneId - The zone ID
  * @returns The delivery zone
  */
-export async function getZoneById(zoneId: number): Promise<DeliveryZone | null> {
+export async function getZoneById(zoneId: string): Promise<DeliveryZone | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -70,12 +73,13 @@ export async function getZoneById(zoneId: number): Promise<DeliveryZone | null> 
  * @returns The updated zone
  */
 export async function updateZone(
-  zoneId: number,
+  zoneId: string,
   updates: ZoneUpdateData
 ): Promise<DeliveryZone> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('delivery_zones')
     .update(updates)
     .eq('id', zoneId)
@@ -97,7 +101,7 @@ export async function updateZone(
  * @returns The updated zone
  */
 export async function toggleZoneActive(
-  zoneId: number,
+  zoneId: string,
   isActive: boolean
 ): Promise<DeliveryZone> {
   return updateZone(zoneId, { is_active: isActive });
@@ -113,7 +117,8 @@ export async function createZone(
 ): Promise<DeliveryZone> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('delivery_zones')
     .insert({
       ...zoneData,
@@ -134,10 +139,11 @@ export async function createZone(
  * Delete a delivery zone
  * @param zoneId - The zone ID to delete
  */
-export async function deleteZone(zoneId: number): Promise<void> {
+export async function deleteZone(zoneId: string): Promise<void> {
   const supabase = createClient();
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('delivery_zones')
     .delete()
     .eq('id', zoneId);
@@ -159,7 +165,7 @@ export async function deleteZone(zoneId: number): Promise<void> {
 export async function generateTimeSlots(
   startDate: string,
   endDate: string,
-  slots: TimeSlotCreateData[]
+  slots: TimeSlotTemplate[]
 ): Promise<number> {
   const supabase = createClient();
 
@@ -190,7 +196,8 @@ export async function generateTimeSlots(
   });
 
   // Insert all slots
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('time_slots')
     .insert(slotsToCreate)
     .select();
@@ -237,7 +244,8 @@ export async function updateTimeSlot(
 ): Promise<TimeSlot> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('time_slots')
     .update(updates)
     .eq('id', slotId)
@@ -264,7 +272,8 @@ export async function deleteTimeSlotsForRange(
 ): Promise<number> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('time_slots')
     .delete()
     .gte('date', startDate)

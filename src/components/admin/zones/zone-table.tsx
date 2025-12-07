@@ -24,9 +24,9 @@ interface ZoneTableProps {
 }
 
 export function ZoneTable({ zones, onEdit, onUpdate }: ZoneTableProps) {
-  const [togglingZones, setTogglingZones] = useState<Set<number>>(new Set());
+  const [togglingZones, setTogglingZones] = useState<Set<string>>(new Set());
 
-  const handleToggleActive = async (zoneId: number, currentActive: boolean) => {
+  const handleToggleActive = async (zoneId: string, currentActive: boolean) => {
     setTogglingZones(prev => new Set(prev).add(zoneId));
 
     try {
@@ -101,7 +101,7 @@ export function ZoneTable({ zones, onEdit, onUpdate }: ZoneTableProps) {
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{formatCurrency(zone.min_order_amount)}</TableCell>
+                <TableCell>{formatCurrency(zone.min_order)}</TableCell>
                 <TableCell>
                   {zone.delivery_fee === 0 ? (
                     <span className="text-green-600 font-medium">Free</span>

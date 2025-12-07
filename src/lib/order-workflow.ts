@@ -13,9 +13,10 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   baking: ['decorating', 'quality_check', 'cancelled'],
   decorating: ['quality_check', 'cancelled'],
   quality_check: ['ready', 'baking'], // Can go back to baking for rework
-  ready: ['out_for_delivery', 'delivered', 'cancelled'], // delivered for pickup
+  ready: ['out_for_delivery', 'picked_up', 'cancelled'], // picked_up for pickup, out_for_delivery for delivery
   out_for_delivery: ['delivered', 'ready'], // ready = return to store
   delivered: ['refunded'],
+  picked_up: ['refunded'], // Terminal state (can still be refunded)
   cancelled: [], // Terminal state
   refunded: [], // Terminal state
 };
@@ -77,6 +78,12 @@ export const STATUS_CONFIG: Record<
   delivered: {
     label: 'Delivered',
     description: 'Your order has been delivered. Enjoy!',
+    color: 'bg-emerald-100 text-emerald-800',
+    icon: 'check',
+  },
+  picked_up: {
+    label: 'Picked Up',
+    description: 'Your order has been picked up. Enjoy!',
     color: 'bg-emerald-100 text-emerald-800',
     icon: 'check',
   },
@@ -152,6 +159,7 @@ export function getOrderProgress(status: OrderStatus): number {
     ready: 85,
     out_for_delivery: 95,
     delivered: 100,
+    picked_up: 100,
     cancelled: 0,
     refunded: 0,
   };
@@ -178,6 +186,7 @@ export function getEstimatedTimeRemaining(
     ready: deliveryType === 'pickup' ? 'Ready now' : '30-45 minutes',
     out_for_delivery: '15-30 minutes',
     delivered: '',
+    picked_up: '',
     cancelled: '',
     refunded: '',
   };

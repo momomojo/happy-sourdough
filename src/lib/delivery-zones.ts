@@ -3,43 +3,62 @@
 
 import type { DeliveryZone } from '@/types/database';
 
-// Default zone configuration (mirrors database)
-export const DEFAULT_ZONES: DeliveryZone[] = [
+// Extended zone info for local calculations (includes radius data not in DB)
+export interface ZoneConfig {
+  id: string;
+  name: string;
+  min_radius_miles: number;
+  max_radius_miles: number;
+  min_order: number;
+  delivery_fee: number;
+  free_delivery_threshold: number | null;
+  is_active: boolean;
+}
+
+// Default zone configuration (for when database zones not available)
+// Aliased as DEFAULT_ZONES for backward compatibility
+export const DEFAULT_ZONE_CONFIGS: ZoneConfig[] = [
   {
-    id: 1,
+    id: 'zone-1',
     name: 'Zone 1 - Downtown',
     min_radius_miles: 0,
     max_radius_miles: 3,
-    min_order_amount: 25,
+    min_order: 25,
     delivery_fee: 0,
+    free_delivery_threshold: null,
     is_active: true,
   },
   {
-    id: 2,
+    id: 'zone-2',
     name: 'Zone 2 - Inner Suburbs',
     min_radius_miles: 3,
     max_radius_miles: 7,
-    min_order_amount: 40,
+    min_order: 40,
     delivery_fee: 5,
+    free_delivery_threshold: 75,
     is_active: true,
   },
   {
-    id: 3,
+    id: 'zone-3',
     name: 'Zone 3 - Outer Areas',
     min_radius_miles: 7,
     max_radius_miles: 12,
-    min_order_amount: 60,
+    min_order: 60,
     delivery_fee: 10,
+    free_delivery_threshold: 100,
     is_active: true,
   },
 ];
 
+// Backward compatibility alias
+export const DEFAULT_ZONES = DEFAULT_ZONE_CONFIGS;
+
 /**
  * Get zone by distance in miles from bakery
  */
-export function getZoneByDistance(distanceMiles: number): DeliveryZone | null {
+export function getZoneByDistance(distanceMiles: number): ZoneConfig | null {
   return (
-    DEFAULT_ZONES.find(
+    DEFAULT_ZONE_CONFIGS.find(
       (zone) =>
         zone.is_active &&
         distanceMiles >= zone.min_radius_miles &&
@@ -52,11 +71,14 @@ export function getZoneByDistance(distanceMiles: number): DeliveryZone | null {
  * Calculate delivery fee for a zone and subtotal
  */
 export function calculateDeliveryFee(
-  zone: DeliveryZone,
+  zone: ZoneConfig | DeliveryZone,
   subtotal: number
 ): number {
-  // Free delivery if subtotal meets threshold (for Zone 1, always free)
-  if (zone.delivery_fee === 0) return 0;
+  // Free delivery if subtotal meets threshold
+  const threshold = 'free_delivery_threshold' in zone ? zone.free_delivery_threshold : null;
+  if (threshold && subtotal >= threshold) {
+    return 0;
+  }
 
   // Standard fee otherwise
   return zone.delivery_fee;
@@ -66,17 +88,17 @@ export function calculateDeliveryFee(
  * Check if order meets minimum for delivery zone
  */
 export function meetsMinimumOrder(
-  zone: DeliveryZone,
+  zone: ZoneConfig | DeliveryZone,
   subtotal: number
 ): boolean {
-  return subtotal >= zone.min_order_amount;
+  return subtotal >= zone.min_order;
 }
 
 /**
  * Get amount needed to reach free delivery (Zone 1 threshold)
  */
 export function getAmountForFreeDelivery(subtotal: number): number {
-  const freeDeliveryMin = DEFAULT_ZONES[0].min_order_amount;
+  const freeDeliveryMin = DEFAULT_ZONE_CONFIGS[0].min_order;
   return Math.max(0, freeDeliveryMin - subtotal);
 }
 
@@ -84,7 +106,7 @@ export function getAmountForFreeDelivery(subtotal: number): number {
  * Validate delivery address is within service area
  */
 export function isWithinServiceArea(distanceMiles: number): boolean {
-  const maxRadius = Math.max(...DEFAULT_ZONES.map((z) => z.max_radius_miles));
+  const maxRadius = Math.max(...DEFAULT_ZONE_CONFIGS.map((z) => z.max_radius_miles));
   return distanceMiles <= maxRadius;
 }
 
@@ -92,7 +114,7 @@ export function isWithinServiceArea(distanceMiles: number): boolean {
  * Get delivery summary for checkout display
  */
 export function getDeliverySummary(
-  zone: DeliveryZone | null,
+  zone: ZoneConfig | DeliveryZone | null,
   subtotal: number
 ): {
   canDeliver: boolean;
@@ -110,11 +132,11 @@ export function getDeliverySummary(
   }
 
   if (!meetsMinimumOrder(zone, subtotal)) {
-    const needed = zone.min_order_amount - subtotal;
+    const needed = zone.min_order - subtotal;
     return {
       canDeliver: false,
       fee: zone.delivery_fee,
-      message: `Add $${needed.toFixed(2)} more to meet the $${zone.min_order_amount} minimum for ${zone.name}`,
+      message: `Add $${needed.toFixed(2)} more to meet the $${zone.min_order} minimum for ${zone.name}`,
       amountToFreeDelivery: null,
     };
   }
@@ -139,17 +161,20 @@ export function getDeliverySummary(
  * Applies free delivery thresholds
  */
 export function calculateActualDeliveryFee(
-  zone: DeliveryZone,
+  zone: ZoneConfig | DeliveryZone,
   subtotal: number
 ): number {
-  // Zone 1: Always free
-  if (zone.id === 1) return 0;
+  const threshold = 'free_delivery_threshold' in zone ? zone.free_delivery_threshold : null;
 
-  // Zone 2: Free over $75
-  if (zone.id === 2 && subtotal >= 75) return 0;
+  // Free if at or above threshold
+  if (threshold && subtotal >= threshold) {
+    return 0;
+  }
 
-  // Zone 3: Free over $100
-  if (zone.id === 3 && subtotal >= 100) return 0;
+  // Zone 1 type (no fee)
+  if (zone.delivery_fee === 0) {
+    return 0;
+  }
 
   return zone.delivery_fee;
 }
@@ -157,7 +182,7 @@ export function calculateActualDeliveryFee(
 /**
  * Check if subtotal meets minimum for zone
  */
-export function isMinimumMet(zone: DeliveryZone, subtotal: number): boolean {
+export function isMinimumMet(zone: ZoneConfig | DeliveryZone, subtotal: number): boolean {
   return meetsMinimumOrder(zone, subtotal);
 }
 
@@ -165,18 +190,24 @@ export function isMinimumMet(zone: DeliveryZone, subtotal: number): boolean {
  * Get estimated delivery time for a zone
  * Returns time in minutes
  */
-export function getEstimatedDeliveryTime(zone: DeliveryZone): number {
-  // Estimate based on zone distance
-  // Zone 1 (0-3mi): 30 minutes
-  // Zone 2 (3-7mi): 45 minutes
-  // Zone 3 (7-12mi): 60 minutes
-  const timeMap: Record<number, number> = {
-    1: 30,
-    2: 45,
-    3: 60,
-  };
+export function getEstimatedDeliveryTime(zone: ZoneConfig | DeliveryZone): number {
+  // Use DB value if available
+  if ('estimated_time_minutes' in zone && zone.estimated_time_minutes) {
+    return zone.estimated_time_minutes;
+  }
 
-  return timeMap[zone.id] || 30;
+  // Fallback estimates based on zone name
+  if (zone.name.includes('Zone 1') || zone.name.includes('Downtown')) {
+    return 30;
+  }
+  if (zone.name.includes('Zone 2') || zone.name.includes('Inner')) {
+    return 45;
+  }
+  if (zone.name.includes('Zone 3') || zone.name.includes('Outer')) {
+    return 60;
+  }
+
+  return 45; // Default
 }
 
 /**
@@ -197,15 +228,9 @@ export function formatDeliveryTime(minutes: number): string {
 /**
  * Get free delivery threshold for a zone
  */
-export function getFreeDeliveryThreshold(zone: DeliveryZone): number | null {
-  // Zone 1: Always free
-  if (zone.id === 1) return null;
-
-  // Zone 2: Free over $75
-  if (zone.id === 2) return 75;
-
-  // Zone 3: Free over $100
-  if (zone.id === 3) return 100;
-
+export function getFreeDeliveryThreshold(zone: ZoneConfig | DeliveryZone): number | null {
+  if ('free_delivery_threshold' in zone) {
+    return zone.free_delivery_threshold;
+  }
   return null;
 }

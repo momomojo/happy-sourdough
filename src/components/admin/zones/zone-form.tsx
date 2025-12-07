@@ -22,10 +22,10 @@ export function ZoneForm({ zone, onSuccess, onCancel }: ZoneFormProps) {
     name: zone.name,
     description: zone.description || '',
     zip_codes: zone.zip_codes,
-    min_order_amount: zone.min_order_amount,
+    min_order: zone.min_order,
     delivery_fee: zone.delivery_fee,
     free_delivery_threshold: zone.free_delivery_threshold || 0,
-    estimated_time_minutes: zone.estimated_time_minutes,
+    estimated_time_minutes: zone.estimated_time_minutes ?? 0,
   });
 
   const [newZipCode, setNewZipCode] = useState('');
@@ -68,7 +68,7 @@ export function ZoneForm({ zone, onSuccess, onCancel }: ZoneFormProps) {
       return;
     }
 
-    if (formData.min_order_amount <= 0) {
+    if (formData.min_order <= 0) {
       toast.error('Minimum order amount must be greater than 0');
       return;
     }
@@ -85,7 +85,7 @@ export function ZoneForm({ zone, onSuccess, onCancel }: ZoneFormProps) {
         name: formData.name,
         description: formData.description || null,
         zip_codes: formData.zip_codes,
-        min_order_amount: formData.min_order_amount,
+        min_order_amount: formData.min_order,
         delivery_fee: formData.delivery_fee,
         free_delivery_threshold: formData.free_delivery_threshold || null,
         estimated_time_minutes: formData.estimated_time_minutes,
@@ -187,11 +187,11 @@ export function ZoneForm({ zone, onSuccess, onCancel }: ZoneFormProps) {
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.min_order_amount}
+                value={formData.min_order}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    min_order_amount: parseFloat(e.target.value) || 0,
+                    min_order: parseFloat(e.target.value) || 0,
                   })
                 }
                 className="pl-7"

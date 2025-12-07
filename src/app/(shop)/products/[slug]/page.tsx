@@ -120,6 +120,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <AddToCartForm
             productId={product.id}
             productName={product.name}
+            basePrice={product.base_price}
             variants={variants}
             imageUrl={product.image_url || undefined}
           />
@@ -134,8 +135,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <AllergenList allergens={product.allergens || []} />
           </div>
 
-          {/* Prep Time */}
-          {product.prep_time_hours > 0 && (
+          {/* Lead Time */}
+          {product.lead_time_hours > 0 && (
             <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
               <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
               <div>
@@ -143,7 +144,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   Preparation Time Required
                 </p>
                 <p className="text-sm text-blue-700">
-                  This item requires {product.prep_time_hours} hours advance notice.
+                  This item requires {product.lead_time_hours} hours advance notice.
                   Please order accordingly to ensure freshness.
                 </p>
               </div>

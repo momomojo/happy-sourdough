@@ -1,9 +1,9 @@
 import { createAdminClient } from '../server';
-import type { Order, OrderStatus } from '@/types/database';
+import type { Order, OrderStatus, FulfillmentType } from '@/types/database';
 
 export interface OrderFilters {
   status?: OrderStatus;
-  delivery_type?: 'pickup' | 'delivery';
+  fulfillment_type?: FulfillmentType;
   date_from?: string;
   date_to?: string;
   search?: string;
@@ -19,6 +19,7 @@ export interface OrderStats {
   ready: number;
   out_for_delivery: number;
   delivered: number;
+  picked_up: number;
   cancelled: number;
   refunded: number;
 }
@@ -28,8 +29,6 @@ export interface OrderWithCustomer extends Order {
   customer_email: string;
   customer_phone: string | null;
   items_count: number;
-  delivery_date?: string;
-  delivery_window?: string;
 }
 
 /**
@@ -42,12 +41,11 @@ export async function getOrders(
 ): Promise<{ orders: OrderWithCustomer[]; total: number }> {
   const supabase = await createAdminClient();
 
-  // Build query
+  // Build query - don't use inner join since guest orders have no user_id
   let query = supabase
     .from('orders')
     .select(`
       *,
-      customer_profiles!inner(full_name, user_id),
       order_items(id)
     `, { count: 'exact' });
 
@@ -56,8 +54,8 @@ export async function getOrders(
     query = query.eq('status', filters.status);
   }
 
-  if (filters.delivery_type) {
-    query = query.eq('delivery_type', filters.delivery_type);
+  if (filters.fulfillment_type) {
+    query = query.eq('fulfillment_type', filters.fulfillment_type);
   }
 
   if (filters.date_from) {
@@ -69,7 +67,7 @@ export async function getOrders(
   }
 
   if (filters.search) {
-    query = query.or(`order_number.ilike.%${filters.search}%,delivery_address.ilike.%${filters.search}%`);
+    query = query.or(`order_number.ilike.%${filters.search}%`);
   }
 
   // Apply pagination
@@ -87,62 +85,88 @@ export async function getOrders(
     throw new Error('Failed to fetch orders');
   }
 
-  // Get user emails from auth.users (requires service role)
-  const userIds = [...new Set(data?.map(order => (order as any).customer_profiles.user_id) || [])];
-  const { data: authUsers } = await supabase.auth.admin.listUsers();
-  const userMap = new Map(authUsers.users.map(user => [user.id, user]));
+  // Get customer info for orders with user_id
+  const userIds = [...new Set((data || [])
+    .filter((order: Record<string, unknown>) => order.user_id)
+    .map((order: Record<string, unknown>) => order.user_id as string)
+  )];
+
+  // Build user map for authenticated users
+  const userMap = new Map<string, { email?: string; firstName?: string; lastName?: string; phone?: string }>();
+
+  if (userIds.length > 0) {
+    const { data: authUsers } = await supabase.auth.admin.listUsers();
+    authUsers.users.forEach(user => {
+      userMap.set(user.id, { email: user.email });
+    });
+
+    // Get profiles
+    const { data: profiles } = await supabase
+      .from('customer_profiles')
+      .select('id, first_name, last_name, phone')
+      .in('id', userIds);
+
+    profiles?.forEach((profile: Record<string, unknown>) => {
+      const existing = userMap.get(profile.id as string) || {};
+      userMap.set(profile.id as string, {
+        ...existing,
+        firstName: profile.first_name as string,
+        lastName: profile.last_name as string,
+        phone: profile.phone as string,
+      });
+    });
+  }
 
   // Transform data
-  const orders: OrderWithCustomer[] = await Promise.all(
-    (data || []).map(async (order: any) => {
-      const profile = order.customer_profiles;
-      const user = userMap.get(profile.user_id);
+  const orders: OrderWithCustomer[] = (data || []).map((order: Record<string, unknown>) => {
+    let customerName = 'Guest';
+    let customerEmail = order.guest_email as string || 'N/A';
+    let customerPhone = order.guest_phone as string | null;
 
-      // Get delivery time slot if applicable
-      let deliveryDate: string | undefined;
-      let deliveryWindow: string | undefined;
-
-      if (order.time_slot_id) {
-        const { data: timeSlot } = await supabase
-          .from('time_slots')
-          .select('date, window_start, window_end')
-          .eq('id', order.time_slot_id)
-          .single();
-
-        if (timeSlot) {
-          deliveryDate = timeSlot.date;
-          deliveryWindow = `${timeSlot.window_start} - ${timeSlot.window_end}`;
-        }
+    if (order.user_id) {
+      const userInfo = userMap.get(order.user_id as string);
+      if (userInfo) {
+        customerName = [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ') || 'Customer';
+        customerEmail = userInfo.email || 'N/A';
+        customerPhone = userInfo.phone || null;
       }
+    }
 
-      return {
-        id: order.id,
-        order_number: order.order_number,
-        user_id: order.user_id,
-        status: order.status,
-        delivery_type: order.delivery_type,
-        delivery_zone_id: order.delivery_zone_id,
-        time_slot_id: order.time_slot_id,
-        delivery_address: order.delivery_address,
-        delivery_instructions: order.delivery_instructions,
-        subtotal: order.subtotal,
-        delivery_fee: order.delivery_fee,
-        tax: order.tax,
-        total: order.total,
-        stripe_payment_intent_id: order.stripe_payment_intent_id,
-        stripe_checkout_session_id: order.stripe_checkout_session_id,
-        notes: order.notes,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-        customer_name: profile.full_name || 'Guest',
-        customer_email: user?.email || 'N/A',
-        customer_phone: profile.phone,
-        items_count: order.order_items?.length || 0,
-        delivery_date: deliveryDate,
-        delivery_window: deliveryWindow,
-      };
-    })
-  );
+    return {
+      id: order.id as string,
+      order_number: order.order_number as string,
+      user_id: order.user_id as string | null,
+      guest_email: order.guest_email as string | null,
+      guest_phone: order.guest_phone as string | null,
+      status: order.status as OrderStatus,
+      fulfillment_type: order.fulfillment_type as FulfillmentType,
+      delivery_date: order.delivery_date as string,
+      delivery_window: order.delivery_window as string,
+      delivery_zone_id: order.delivery_zone_id as string | null,
+      time_slot_id: order.time_slot_id as string | null,
+      delivery_address: order.delivery_address as Order['delivery_address'],
+      pickup_location: order.pickup_location as string | null,
+      subtotal: order.subtotal as number,
+      delivery_fee: order.delivery_fee as number,
+      discount_amount: order.discount_amount as number,
+      tax_amount: order.tax_amount as number,
+      tip_amount: order.tip_amount as number,
+      total: order.total as number,
+      stripe_payment_intent_id: order.stripe_payment_intent_id as string | null,
+      stripe_charge_id: order.stripe_charge_id as string | null,
+      payment_status: order.payment_status as Order['payment_status'],
+      notes: order.notes as string | null,
+      internal_notes: order.internal_notes as string | null,
+      created_at: order.created_at as string,
+      updated_at: order.updated_at as string,
+      confirmed_at: order.confirmed_at as string | null,
+      completed_at: order.completed_at as string | null,
+      customer_name: customerName,
+      customer_email: customerEmail,
+      customer_phone: customerPhone,
+      items_count: ((order.order_items as unknown[]) || []).length,
+    };
+  });
 
   return {
     orders,
@@ -156,14 +180,25 @@ export async function getOrders(
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrderStatus,
-  notes?: string
+  notes?: string,
+  adminUserId?: string
 ): Promise<void> {
   const supabase = await createAdminClient();
+
+  // Build update object
+  const updateData: Record<string, unknown> = {
+    status: newStatus,
+  };
+
+  // Set completed_at when order is delivered or picked_up
+  if (newStatus === 'delivered' || newStatus === 'picked_up') {
+    updateData.completed_at = new Date().toISOString();
+  }
 
   // Update order status
   const { error: updateError } = await supabase
     .from('orders')
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', orderId);
 
   if (updateError) {
@@ -178,7 +213,7 @@ export async function updateOrderStatus(
       order_id: orderId,
       status: newStatus,
       notes: notes || null,
-      changed_by: null, // TODO: Add admin user ID when auth is implemented
+      changed_by: adminUserId || null,
     });
 
   if (historyError) {
@@ -207,8 +242,8 @@ export async function getOrderStats(filters: OrderFilters = {}): Promise<OrderSt
     query = query.lte('created_at', filters.date_to);
   }
 
-  if (filters.delivery_type) {
-    query = query.eq('delivery_type', filters.delivery_type);
+  if (filters.fulfillment_type) {
+    query = query.eq('fulfillment_type', filters.fulfillment_type);
   }
 
   const { data, count, error } = await query;
@@ -229,14 +264,15 @@ export async function getOrderStats(filters: OrderFilters = {}): Promise<OrderSt
     ready: 0,
     out_for_delivery: 0,
     delivered: 0,
+    picked_up: 0,
     cancelled: 0,
     refunded: 0,
   };
 
-  data?.forEach((order: any) => {
+  data?.forEach((order: Record<string, unknown>) => {
     const status = order.status as OrderStatus;
     if (status in stats) {
-      stats[status]++;
+      (stats as unknown as Record<string, number>)[status]++;
     }
   });
 
@@ -253,7 +289,6 @@ export async function getOrderById(orderId: string): Promise<OrderWithCustomer |
     .from('orders')
     .select(`
       *,
-      customer_profiles!inner(full_name, phone, user_id),
       order_items(id)
     `)
     .eq('id', orderId)
@@ -264,54 +299,61 @@ export async function getOrderById(orderId: string): Promise<OrderWithCustomer |
     return null;
   }
 
-  // Get user email
-  const { data: authUser } = await supabase.auth.admin.getUserById(
-    (order as any).customer_profiles.user_id
-  );
+  // Get customer info
+  let customerName = 'Guest';
+  let customerEmail = order.guest_email || 'N/A';
+  let customerPhone = order.guest_phone || null;
 
-  // Get delivery time slot
-  let deliveryDate: string | undefined;
-  let deliveryWindow: string | undefined;
+  if (order.user_id) {
+    const { data: authUser } = await supabase.auth.admin.getUserById(order.user_id);
+    if (authUser?.user?.email) {
+      customerEmail = authUser.user.email;
+    }
 
-  if (order.time_slot_id) {
-    const { data: timeSlot } = await supabase
-      .from('time_slots')
-      .select('date, window_start, window_end')
-      .eq('id', order.time_slot_id)
+    const { data: profile } = await supabase
+      .from('customer_profiles')
+      .select('first_name, last_name, phone')
+      .eq('id', order.user_id)
       .single();
 
-    if (timeSlot) {
-      deliveryDate = timeSlot.date;
-      deliveryWindow = `${timeSlot.window_start} - ${timeSlot.window_end}`;
+    if (profile) {
+      customerName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Customer';
+      customerPhone = profile.phone || customerPhone;
     }
   }
-
-  const profile = (order as any).customer_profiles;
 
   return {
     id: order.id,
     order_number: order.order_number,
     user_id: order.user_id,
+    guest_email: order.guest_email,
+    guest_phone: order.guest_phone,
     status: order.status,
-    delivery_type: order.delivery_type,
+    fulfillment_type: order.fulfillment_type,
+    delivery_date: order.delivery_date,
+    delivery_window: order.delivery_window,
     delivery_zone_id: order.delivery_zone_id,
     time_slot_id: order.time_slot_id,
     delivery_address: order.delivery_address,
-    delivery_instructions: order.delivery_instructions,
+    pickup_location: order.pickup_location,
     subtotal: order.subtotal,
     delivery_fee: order.delivery_fee,
-    tax: order.tax,
+    discount_amount: order.discount_amount,
+    tax_amount: order.tax_amount,
+    tip_amount: order.tip_amount,
     total: order.total,
     stripe_payment_intent_id: order.stripe_payment_intent_id,
-    stripe_checkout_session_id: order.stripe_checkout_session_id,
+    stripe_charge_id: order.stripe_charge_id,
+    payment_status: order.payment_status,
     notes: order.notes,
+    internal_notes: order.internal_notes,
     created_at: order.created_at,
     updated_at: order.updated_at,
-    customer_name: profile.full_name || 'Guest',
-    customer_email: authUser?.user?.email || 'N/A',
-    customer_phone: profile.phone,
-    items_count: (order as any).order_items?.length || 0,
-    delivery_date: deliveryDate,
-    delivery_window: deliveryWindow,
+    confirmed_at: order.confirmed_at,
+    completed_at: order.completed_at,
+    customer_name: customerName,
+    customer_email: customerEmail,
+    customer_phone: customerPhone,
+    items_count: order.order_items?.length || 0,
   };
 }

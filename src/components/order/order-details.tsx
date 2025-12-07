@@ -73,7 +73,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
 
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Tax</span>
-                <span>{formatCurrency(order.tax)}</span>
+                <span>{formatCurrency(order.tax_amount)}</span>
               </div>
 
               <Separator />
@@ -91,7 +91,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {order.delivery_type === 'delivery' ? (
+            {order.fulfillment_type === 'delivery' ? (
               <>
                 <Truck className="h-5 w-5" />
                 Delivery Information
@@ -107,26 +107,32 @@ export function OrderDetails({ order }: OrderDetailsProps) {
         <CardContent className="space-y-4">
           {/* Fulfillment Type Badge */}
           <div>
-            <Badge variant={order.delivery_type === 'delivery' ? 'default' : 'secondary'}>
-              {order.delivery_type === 'delivery' ? 'Delivery' : 'Pickup'}
+            <Badge variant={order.fulfillment_type === 'delivery' ? 'default' : 'secondary'}>
+              {order.fulfillment_type === 'delivery' ? 'Delivery' : 'Pickup'}
             </Badge>
           </div>
 
           {/* Delivery Address */}
-          {order.delivery_type === 'delivery' && order.delivery_address && (
+          {order.fulfillment_type === 'delivery' && order.delivery_address && (
             <div>
               <p className="mb-1 text-sm font-medium text-muted-foreground">Delivery Address</p>
-              <p className="text-sm">{order.delivery_address}</p>
-              {order.delivery_instructions && (
+              <p className="text-sm">
+                {order.delivery_address.street}
+                {order.delivery_address.apt && `, ${order.delivery_address.apt}`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {order.delivery_address.city}, {order.delivery_address.state} {order.delivery_address.zip}
+              </p>
+              {order.notes && (
                 <p className="mt-2 text-sm italic text-muted-foreground">
-                  Instructions: {order.delivery_instructions}
+                  Instructions: {order.notes}
                 </p>
               )}
             </div>
           )}
 
           {/* Pickup Location */}
-          {order.delivery_type === 'pickup' && (
+          {order.fulfillment_type === 'pickup' && (
             <div>
               <p className="mb-1 text-sm font-medium text-muted-foreground">Pickup Location</p>
               <p className="text-sm font-medium">Happy Sourdough Bakery</p>
@@ -141,7 +147,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
               <Calendar className="mt-0.5 h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  {order.delivery_type === 'delivery' ? 'Estimated Delivery' : 'Pickup Time'}
+                  {order.fulfillment_type === 'delivery' ? 'Estimated Delivery' : 'Pickup Time'}
                 </p>
                 <p className="text-sm font-semibold">
                   {format(new Date(order.delivery_date), 'EEEE, MMMM d, yyyy')}

@@ -25,6 +25,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   ready: 'bg-green-500',
   out_for_delivery: 'bg-green-500',
   delivered: 'bg-green-600',
+  picked_up: 'bg-green-600',
   cancelled: 'bg-red-500',
   refunded: 'bg-red-600',
 };
@@ -38,6 +39,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   ready: 'Ready',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',
+  picked_up: 'Picked Up',
   cancelled: 'Cancelled',
   refunded: 'Refunded',
 };
@@ -153,7 +155,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
-                    <span>{formatCurrency(order.tax)}</span>
+                    <span>{formatCurrency(order.tax_amount)}</span>
                   </div>
 
                   <Separator />
@@ -172,29 +174,34 @@ export default async function OrderDetailPage({ params }: PageProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                {order.delivery_type === 'delivery' ? 'Delivery' : 'Pickup'} Information
+                {order.fulfillment_type === 'delivery' ? 'Delivery' : 'Pickup'} Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Badge variant={order.delivery_type === 'delivery' ? 'default' : 'secondary'}>
-                  {order.delivery_type === 'delivery' ? 'Delivery' : 'Pickup'}
+                <Badge variant={order.fulfillment_type === 'delivery' ? 'default' : 'secondary'}>
+                  {order.fulfillment_type === 'delivery' ? 'Delivery' : 'Pickup'}
                 </Badge>
               </div>
 
-              {order.delivery_type === 'delivery' && order.delivery_address && (
+              {order.fulfillment_type === 'delivery' && order.delivery_address && (
                 <div>
                   <p className="mb-1 text-sm font-medium text-muted-foreground">Delivery Address</p>
-                  <p className="text-sm">{order.delivery_address}</p>
-                  {order.delivery_instructions && (
+                  <p className="text-sm">
+                    {order.delivery_address.street}
+                    {order.delivery_address.apt && `, ${order.delivery_address.apt}`}
+                    <br />
+                    {order.delivery_address.city}, {order.delivery_address.state} {order.delivery_address.zip}
+                  </p>
+                  {order.notes && (
                     <p className="mt-2 text-sm italic text-muted-foreground">
-                      Instructions: {order.delivery_instructions}
+                      Instructions: {order.notes}
                     </p>
                   )}
                 </div>
               )}
 
-              {order.delivery_type === 'pickup' && (
+              {order.fulfillment_type === 'pickup' && (
                 <div>
                   <p className="mb-1 text-sm font-medium text-muted-foreground">Pickup Location</p>
                   <p className="text-sm font-medium">Happy Sourdough Bakery</p>
@@ -206,7 +213,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               {order.delivery_date && (
                 <div>
                   <p className="mb-1 text-sm font-medium text-muted-foreground">
-                    {order.delivery_type === 'delivery' ? 'Estimated Delivery' : 'Pickup Time'}
+                    {order.fulfillment_type === 'delivery' ? 'Estimated Delivery' : 'Pickup Time'}
                   </p>
                   <p className="text-sm font-semibold">
                     {new Date(order.delivery_date).toLocaleDateString('en-US', {

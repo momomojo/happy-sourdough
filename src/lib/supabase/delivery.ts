@@ -2,13 +2,10 @@
 // Handles delivery zones, time slots, and blackout dates
 
 import { createClient } from './client';
-import type { DeliveryZone, TimeSlot, DeliveryType } from '@/types/database';
+import type { DeliveryZone, TimeSlot, FulfillmentType, BlackoutDate } from '@/types/database';
 
-export interface BlackoutDate {
-  id: string;
-  date: string;
-  reason: string;
-}
+// Re-export types for convenience
+export type { BlackoutDate };
 
 /**
  * Get delivery zone by zip code
@@ -32,16 +29,16 @@ export async function getDeliveryZoneByZip(
     return null;
   }
 
-  return data as unknown as DeliveryZone;
+  return data as DeliveryZone;
 }
 
 /**
- * Get available time slots for a specific date and delivery type
+ * Get available time slots for a specific date and fulfillment type
  * Filters by slot availability and type (pickup/delivery/both)
  */
 export async function getAvailableTimeSlots(
   date: string,
-  type: DeliveryType
+  type: FulfillmentType
 ): Promise<TimeSlot[]> {
   const supabase = createClient();
 
@@ -54,8 +51,8 @@ export async function getAvailableTimeSlots(
     .select('*')
     .eq('date', date)
     .eq('is_available', true)
-    .or(`delivery_type.eq.${type},delivery_type.eq.both`)
-    .order('start_time', { ascending: true });
+    .or(`slot_type.eq.${type},slot_type.eq.both`)
+    .order('window_start', { ascending: true });
 
   if (error) {
     console.error('Error fetching time slots:', error);
@@ -126,7 +123,7 @@ export async function checkSlotAvailability(
 export async function getTimeSlotsForRange(
   startDate: string,
   endDate: string,
-  type?: DeliveryType
+  type?: FulfillmentType
 ): Promise<TimeSlot[]> {
   const supabase = createClient();
 
@@ -137,10 +134,10 @@ export async function getTimeSlotsForRange(
     .lte('date', endDate)
     .eq('is_available', true)
     .order('date', { ascending: true })
-    .order('start_time', { ascending: true });
+    .order('window_start', { ascending: true });
 
   if (type) {
-    query = query.or(`delivery_type.eq.${type},delivery_type.eq.both`);
+    query = query.or(`slot_type.eq.${type},slot_type.eq.both`);
   }
 
   const { data, error } = await query;
@@ -168,8 +165,9 @@ export async function reserveTimeSlot(slotId: string): Promise<boolean> {
     return false;
   }
 
-  // Increment current_orders atomically
-  const { error } = await supabase.rpc('increment_slot_orders', {
+  // Increment current_orders atomically using RPC
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).rpc('increment_slot_orders', {
     slot_id: slotId,
   });
 
@@ -188,8 +186,9 @@ export async function reserveTimeSlot(slotId: string): Promise<boolean> {
 export async function releaseTimeSlot(slotId: string): Promise<boolean> {
   const supabase = createClient();
 
-  // Decrement current_orders atomically
-  const { error } = await supabase.rpc('decrement_slot_orders', {
+  // Decrement current_orders atomically using RPC
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).rpc('decrement_slot_orders', {
     slot_id: slotId,
   });
 
@@ -199,4 +198,24 @@ export async function releaseTimeSlot(slotId: string): Promise<boolean> {
   }
 
   return true;
+}
+
+/**
+ * Get all active delivery zones
+ */
+export async function getAllDeliveryZones(): Promise<DeliveryZone[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('delivery_zones')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching delivery zones:', error);
+    return [];
+  }
+
+  return data as DeliveryZone[];
 }

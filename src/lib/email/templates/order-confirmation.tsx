@@ -73,7 +73,7 @@ export const OrderConfirmationEmail = ({
           </Text>
 
           <Section style={orderBox}>
-            <Text style={orderNumber}>
+            <Text style={orderNumberStyle}>
               Order #{orderNumber}
             </Text>
           </Section>
@@ -254,7 +254,7 @@ const orderBox = {
   margin: '30px 0',
 };
 
-const orderNumber = {
+const orderNumberStyle = {
   color: '#2C1810',
   fontSize: '24px',
   fontWeight: 'bold',

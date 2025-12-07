@@ -48,7 +48,7 @@ export function DeliverySummary({
     if (!timeSlot || !selectedDate) return null;
 
     // Parse the start time (format: "08:00:00")
-    const [hours, minutes] = timeSlot.start_time.split(':').map(Number);
+    const [hours, minutes] = timeSlot.window_start.split(':').map(Number);
     const slotStart = new Date(selectedDate);
     slotStart.setHours(hours, minutes, 0);
 
@@ -111,7 +111,7 @@ export function DeliverySummary({
             <div className="flex-1">
               <p className="text-sm font-medium">Time Window</p>
               <p className="text-sm text-muted-foreground">
-                {formatTimeRange(timeSlot.start_time, timeSlot.end_time)}
+                {formatTimeRange(timeSlot.window_start, timeSlot.window_end)}
               </p>
             </div>
           </div>
@@ -194,7 +194,7 @@ export function DeliverySummary({
                   Minimum Order Not Met
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Add ${(deliveryZone.min_order_amount - subtotal).toFixed(2)} more to meet the ${deliveryZone.min_order_amount} minimum for {deliveryZone.name}
+                  Add ${(deliveryZone.min_order - subtotal).toFixed(2)} more to meet the ${deliveryZone.min_order} minimum for {deliveryZone.name}
                 </p>
               </div>
             </div>
@@ -205,19 +205,15 @@ export function DeliverySummary({
         {deliveryType === 'delivery' &&
           deliveryZone &&
           deliveryFee > 0 &&
-          meetsMinimum && (
+          meetsMinimum &&
+          deliveryZone.free_delivery_threshold && (
             <>
               <Separator />
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  {deliveryZone.id === 2 && subtotal < 75 && (
+                  {subtotal < deliveryZone.free_delivery_threshold && (
                     <>
-                      Add ${(75 - subtotal).toFixed(2)} more for free delivery
-                    </>
-                  )}
-                  {deliveryZone.id === 3 && subtotal < 100 && (
-                    <>
-                      Add ${(100 - subtotal).toFixed(2)} more for free delivery
+                      Add ${(deliveryZone.free_delivery_threshold - subtotal).toFixed(2)} more for free delivery
                     </>
                   )}
                 </p>

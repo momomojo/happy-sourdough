@@ -18,7 +18,7 @@ import Link from 'next/link';
 interface PageProps {
   searchParams: Promise<{
     status?: OrderStatus;
-    delivery_type?: 'pickup' | 'delivery';
+    fulfillment_type?: 'pickup' | 'delivery';
     page?: string;
   }>;
 }
@@ -32,6 +32,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   ready: 'Ready',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',
+  picked_up: 'Picked Up',
   cancelled: 'Cancelled',
   refunded: 'Refunded',
 };
@@ -102,7 +103,7 @@ async function OrderList({ filters, page }: { filters: OrderFilters; page: numbe
               asChild={page > 1}
             >
               {page > 1 ? (
-                <Link href={`/orders?page=${page - 1}${filters.status ? `&status=${filters.status}` : ''}${filters.delivery_type ? `&delivery_type=${filters.delivery_type}` : ''}`}>
+                <Link href={`/orders?page=${page - 1}${filters.status ? `&status=${filters.status}` : ''}${filters.fulfillment_type ? `&fulfillment_type=${filters.fulfillment_type}` : ''}`}>
                   Previous
                 </Link>
               ) : (
@@ -116,7 +117,7 @@ async function OrderList({ filters, page }: { filters: OrderFilters; page: numbe
               asChild={page < totalPages}
             >
               {page < totalPages ? (
-                <Link href={`/orders?page=${page + 1}${filters.status ? `&status=${filters.status}` : ''}${filters.delivery_type ? `&delivery_type=${filters.delivery_type}` : ''}`}>
+                <Link href={`/orders?page=${page + 1}${filters.status ? `&status=${filters.status}` : ''}${filters.fulfillment_type ? `&fulfillment_type=${filters.fulfillment_type}` : ''}`}>
                   Next
                 </Link>
               ) : (
@@ -186,13 +187,13 @@ function OrderFilters({ currentFilters }: { currentFilters: OrderFilters }) {
           Type:
         </label>
         <Select
-          value={currentFilters.delivery_type || 'all'}
+          value={currentFilters.fulfillment_type || 'all'}
           onValueChange={(value) => {
             const url = new URL(window.location.href);
             if (value === 'all') {
-              url.searchParams.delete('delivery_type');
+              url.searchParams.delete('fulfillment_type');
             } else {
-              url.searchParams.set('delivery_type', value);
+              url.searchParams.set('fulfillment_type', value);
             }
             url.searchParams.delete('page');
             window.location.href = url.toString();
@@ -209,7 +210,7 @@ function OrderFilters({ currentFilters }: { currentFilters: OrderFilters }) {
         </Select>
       </div>
 
-      {(currentFilters.status || currentFilters.delivery_type) && (
+      {(currentFilters.status || currentFilters.fulfillment_type) && (
         <Button
           variant="ghost"
           size="sm"
@@ -228,7 +229,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const filters: OrderFilters = {
     status: params.status,
-    delivery_type: params.delivery_type,
+    fulfillment_type: params.fulfillment_type,
   };
   const page = parseInt(params.page || '1', 10);
 

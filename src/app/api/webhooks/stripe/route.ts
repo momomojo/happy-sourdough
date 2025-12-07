@@ -3,12 +3,12 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { verifyWebhookSignature } from '@/lib/stripe/server';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
 import { sendOrderConfirmationEmail } from '@/lib/email/send';
 
 // Create a Supabase client with service role for webhook operations
 // This bypasses RLS as webhooks don't have user context
-const supabaseAdmin = createClient<Database>(
+// Using untyped client for flexibility
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -99,9 +99,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     .from('orders')
     .update({
       stripe_payment_intent_id: session.payment_intent as string,
-      stripe_checkout_session_id: session.id,
+      payment_status: 'paid',
       status: 'confirmed',
-      updated_at: new Date().toISOString(),
+      confirmed_at: new Date().toISOString(),
     })
     .eq('id', orderId);
 
@@ -128,13 +128,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   // Send confirmation email
   try {
-    // Fetch order details with customer info and items
+    // Fetch order details
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select(`
-        *,
-        customer_profiles!inner(full_name, user_id)
-      `)
+      .select('*')
       .eq('id', orderId)
       .single();
 
@@ -143,13 +140,31 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       return;
     }
 
-    // Get customer email from auth
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(
-      (order as any).customer_profiles.user_id
-    );
+    // Get customer email - either from guest_email or from auth user
+    let customerEmail: string | undefined;
+    let customerName = 'Customer';
 
-    if (!authUser?.user?.email) {
-      console.error('No email found for user');
+    if (order.guest_email) {
+      customerEmail = order.guest_email;
+    } else if (order.user_id) {
+      // Get user from auth
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
+      customerEmail = authUser?.user?.email;
+
+      // Try to get profile name
+      const { data: profile } = await supabaseAdmin
+        .from('customer_profiles')
+        .select('first_name, last_name')
+        .eq('id', order.user_id)
+        .single();
+
+      if (profile) {
+        customerName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Customer';
+      }
+    }
+
+    if (!customerEmail) {
+      console.error('No email found for order');
       return;
     }
 
@@ -187,25 +202,25 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     // Format items for email
-    const emailItems = orderItems.map((item: any) => ({
-      product_name: item.products?.name || 'Unknown Product',
-      variant_name: item.product_variants?.name || null,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total_price: item.total_price,
+    const emailItems = orderItems.map((item: Record<string, unknown>) => ({
+      product_name: (item.products as { name: string } | null)?.name || item.product_name as string || 'Unknown Product',
+      variant_name: (item.product_variants as { name: string } | null)?.name || item.variant_name as string || null,
+      quantity: item.quantity as number,
+      unit_price: item.unit_price as number,
+      total_price: item.total_price as number,
     }));
 
     // Send email
     await sendOrderConfirmationEmail({
       orderNumber: order.order_number,
-      customerName: (order as any).customer_profiles.full_name || 'Customer',
-      customerEmail: authUser.user.email,
+      customerName,
+      customerEmail,
       items: emailItems,
       subtotal: order.subtotal,
       deliveryFee: order.delivery_fee,
-      tax: order.tax,
+      tax: order.tax_amount,
       total: order.total,
-      deliveryType: order.delivery_type,
+      deliveryType: order.fulfillment_type,
       deliveryAddress: order.delivery_address || undefined,
       timeSlot,
     });
@@ -236,8 +251,11 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
 
   console.log(`Payment failed for order: ${order.order_number}`);
 
-  // You might want to send an email notification here
-  // or update the order status to reflect the payment failure
+  // Update order payment status
+  await supabaseAdmin
+    .from('orders')
+    .update({ payment_status: 'failed' })
+    .eq('id', order.id);
 }
 
 /**
@@ -271,7 +289,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .from('orders')
     .update({
       status: 'refunded',
-      updated_at: new Date().toISOString(),
+      payment_status: 'refunded',
     })
     .eq('id', order.id);
 

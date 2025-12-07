@@ -22,7 +22,7 @@ export interface CheckoutFormData {
   deliveryWindow: string;
 
   // Payment
-  saveCard: boolean;
+  saveCard?: boolean;
 
   // Optional
   specialInstructions?: string;

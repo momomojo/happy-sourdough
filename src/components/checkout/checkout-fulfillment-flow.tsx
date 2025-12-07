@@ -56,9 +56,10 @@ export function CheckoutFulfillmentFlow({
 
   // Helper function to calculate delivery fee
   function calculateDeliveryFee(zone: DeliveryZone, subtotal: number): number {
-    if (zone.id === 1) return 0;
-    if (zone.id === 2 && subtotal >= 75) return 0;
-    if (zone.id === 3 && subtotal >= 100) return 0;
+    // Free delivery if zone fee is 0
+    if (zone.delivery_fee === 0) return 0;
+    // Free delivery if subtotal exceeds zone's free delivery threshold
+    if (zone.free_delivery_threshold && subtotal >= zone.free_delivery_threshold) return 0;
     return zone.delivery_fee;
   }
 

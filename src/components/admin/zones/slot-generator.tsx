@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Calendar } from 'lucide-react';
-import { generateTimeSlots, type TimeSlotCreateData } from '@/lib/supabase/admin/zones';
+import { generateTimeSlots, type TimeSlotTemplate } from '@/lib/supabase/admin/zones';
 import { toast } from 'sonner';
 
 interface SlotTemplate {
@@ -110,7 +110,7 @@ export function SlotGenerator() {
     setIsGenerating(true);
 
     try {
-      const slots: TimeSlotCreateData[] = slotTemplates.map((template) => ({
+      const slots: TimeSlotTemplate[] = slotTemplates.map((template) => ({
         window_start: template.window_start,
         window_end: template.window_end,
         slot_type: template.slot_type,

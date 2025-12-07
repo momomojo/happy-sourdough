@@ -39,6 +39,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   ready: 'bg-green-500',
   out_for_delivery: 'bg-green-500',
   delivered: 'bg-green-600',
+  picked_up: 'bg-green-600',
   cancelled: 'bg-red-500',
   refunded: 'bg-red-600',
 };
@@ -52,6 +53,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   ready: 'Ready',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',
+  picked_up: 'Picked Up',
   cancelled: 'Cancelled',
   refunded: 'Refunded',
 };

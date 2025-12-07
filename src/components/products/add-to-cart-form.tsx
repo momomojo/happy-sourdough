@@ -12,6 +12,7 @@ import { ShoppingCart, Plus, Minus } from 'lucide-react';
 interface AddToCartFormProps {
   productId: string;
   productName: string;
+  basePrice: number;
   variants: ProductVariant[];
   imageUrl?: string;
 }
@@ -19,6 +20,7 @@ interface AddToCartFormProps {
 export function AddToCartForm({
   productId,
   productName,
+  basePrice,
   variants,
   imageUrl,
 }: AddToCartFormProps) {
@@ -50,7 +52,7 @@ export function AddToCartForm({
         variantId: selectedVariant.id,
         productName,
         variantName: selectedVariant.name,
-        unitPrice: selectedVariant.price,
+        unitPrice: basePrice + selectedVariant.price_adjustment,
         imageUrl,
         quantity,
       });
@@ -81,7 +83,7 @@ export function AddToCartForm({
         variants={variants}
         selectedVariantId={selectedVariantId}
         onVariantChange={setSelectedVariantId}
-        basePrice={defaultVariant?.price}
+        basePrice={basePrice}
       />
 
       {/* Quantity Selector */}
@@ -129,14 +131,8 @@ export function AddToCartForm({
             <span className="text-sm text-gray-600">Total Price:</span>
             <div className="text-right">
               <div className="text-2xl font-bold">
-                ${(selectedVariant.price * quantity).toFixed(2)}
+                ${((basePrice + selectedVariant.price_adjustment) * quantity).toFixed(2)}
               </div>
-              {selectedVariant.compare_at_price &&
-               selectedVariant.compare_at_price > selectedVariant.price && (
-                <div className="text-sm text-gray-500 line-through">
-                  ${(selectedVariant.compare_at_price * quantity).toFixed(2)}
-                </div>
-              )}
             </div>
           </div>
         </div>

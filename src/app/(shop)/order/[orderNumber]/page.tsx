@@ -60,7 +60,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
         <div className="lg:col-span-1">
           <OrderStatusTracker
             currentStatus={order.status}
-            deliveryType={order.delivery_type}
+            deliveryType={order.fulfillment_type}
             hasDecorating={hasDecorating}
             statusHistory={order.status_history}
           />

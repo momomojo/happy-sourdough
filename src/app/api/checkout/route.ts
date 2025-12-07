@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createCheckoutSession } from '@/lib/stripe/server';
 import type { CheckoutFormData } from '@/types/checkout';
 import type { CartItem } from '@/contexts/cart-context';
-import { getZoneByDistance } from '@/lib/delivery-zones';
+import type { Order, OrderItem } from '@/types/database';
 
 interface CheckoutRequestBody extends CheckoutFormData {
   items: CartItem[];
@@ -57,22 +57,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Get or create user (guest checkout)
+    // Get authenticated user (optional - guest checkout allowed)
     const { data: { user } } = await supabase.auth.getUser();
-    let userId = user?.id;
-
-    // If no authenticated user, create anonymous order
-    // We'll store the guest email for order tracking
-    if (!userId) {
-      userId = 'guest'; // We'll use guest orders with email tracking
-    }
+    const userId = user?.id || null;
 
     // Verify products exist and are available
     const variantIds = items.map(item => item.variantId);
-    const { data: variants, error: variantsError } = await supabase
+    const { data: variantsData, error: variantsError } = await supabase
       .from('product_variants')
-      .select('id, product_id, price, is_available')
-      .in('id', variantIds) as any;
+      .select('id, product_id, price_adjustment, is_available')
+      .in('id', variantIds);
 
     if (variantsError) {
       console.error('Error fetching variants:', variantsError);
@@ -82,9 +76,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate all items are available and prices match
+    const variants = variantsData;
+
+    // Validate all items are available
     const unavailableItems: string[] = [];
-    const priceMismatches: string[] = [];
 
     items.forEach(item => {
       const variant = variants?.find(v => v.id === item.variantId);
@@ -96,9 +91,6 @@ export async function POST(request: NextRequest) {
         unavailableItems.push(item.productName);
         return;
       }
-      if (variant.price !== item.unitPrice) {
-        priceMismatches.push(item.productName);
-      }
     });
 
     if (unavailableItems.length > 0) {
@@ -108,30 +100,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (priceMismatches.length > 0) {
-      return NextResponse.json(
-        { error: `Prices have changed for: ${priceMismatches.join(', ')}. Please refresh your cart.` },
-        { status: 400 }
-      );
-    }
-
     // Calculate totals
-    const TAX_RATE = 0.08;
+    const TAX_RATE = 0.08; // TODO: Make configurable
     const taxAmount = subtotal * TAX_RATE;
     const total = subtotal + deliveryFee + taxAmount;
 
-    // Determine delivery zone
-    let deliveryZoneId: number | null = null;
+    // Determine delivery zone from ZIP code
+    let deliveryZoneId: string | null = null;
     if (fulfillmentType === 'delivery' && deliveryAddress) {
-      // In production, you would geocode the address to get actual distance
-      // For now, we'll use a mock zone based on ZIP
-      const zipNum = parseInt(deliveryAddress.zip);
-      if (zipNum >= 90001 && zipNum <= 90010) {
-        deliveryZoneId = 1;
-      } else if (zipNum >= 90011 && zipNum <= 90050) {
-        deliveryZoneId = 2;
-      } else if (zipNum >= 90051 && zipNum <= 90100) {
-        deliveryZoneId = 3;
+      const { data: zoneData } = await supabase
+        .from('delivery_zones')
+        .select('id')
+        .contains('zip_codes', [deliveryAddress.zip])
+        .eq('is_active', true)
+        .single();
+
+      if (zoneData) {
+        deliveryZoneId = zoneData.id;
       }
     }
 
@@ -145,25 +130,39 @@ export async function POST(request: NextRequest) {
     } : null;
 
     // Create order in database
-    const orderInsert = {
+    type OrderInsert = Omit<Order, 'id' | 'order_number' | 'created_at' | 'updated_at'>;
+    const orderInsert: OrderInsert = {
       user_id: userId,
-      status: 'received' as const,
-      delivery_type: fulfillmentType,
+      guest_email: userId ? null : email,
+      guest_phone: userId ? null : phone,
+      status: 'received',
+      fulfillment_type: fulfillmentType,
+      delivery_date: deliveryDate,
+      delivery_window: deliveryWindow,
+      time_slot_id: null, // TODO: Reserve time slot
       delivery_zone_id: deliveryZoneId,
-      delivery_address: deliveryAddressJson as any,
-      delivery_instructions: deliveryInstructions || null,
+      delivery_address: deliveryAddressJson,
+      pickup_location: fulfillmentType === 'pickup' ? 'Main Bakery' : null,
       subtotal,
       delivery_fee: deliveryFee,
-      tax: taxAmount,
+      discount_amount: 0,
+      tax_amount: taxAmount,
+      tip_amount: 0,
       total,
-      notes: null,
+      stripe_payment_intent_id: null,
+      stripe_charge_id: null,
+      payment_status: 'pending',
+      notes: deliveryInstructions || null,
+      internal_notes: null,
+      confirmed_at: null,
+      completed_at: null,
     };
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert(orderInsert as any)
+      .insert(orderInsert)
       .select()
-      .single() as any;
+      .single();
 
     if (orderError) {
       console.error('Error creating order:', orderError);
@@ -173,11 +172,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create order items
-    const orderItems = items.map(item => ({
+    // Create order items with correct field names
+    type OrderItemInsert = Omit<OrderItem, 'id' | 'created_at'>;
+    const orderItems: OrderItemInsert[] = items.map(item => ({
       order_id: order.id,
       product_id: item.productId,
-      variant_id: item.variantId,
+      product_variant_id: item.variantId,
+      product_name: item.productName,
+      variant_name: item.variantName,
       quantity: item.quantity,
       unit_price: item.unitPrice,
       total_price: item.unitPrice * item.quantity,
@@ -186,7 +188,7 @@ export async function POST(request: NextRequest) {
 
     const { error: itemsError } = await supabase
       .from('order_items')
-      .insert(orderItems as any);
+      .insert(orderItems);
 
     if (itemsError) {
       console.error('Error creating order items:', itemsError);
@@ -253,7 +255,7 @@ export async function POST(request: NextRequest) {
     // Update order with Stripe session ID
     await supabase
       .from('orders')
-      .update({ stripe_checkout_session_id: session.id } as any)
+      .update({ stripe_checkout_session_id: session.id })
       .eq('id', order.id);
 
     // Return checkout session URL

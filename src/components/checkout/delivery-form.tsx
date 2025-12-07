@@ -220,7 +220,7 @@ export function DeliveryForm({ form, onDeliveryFeeChange }: DeliveryFormProps) {
                           ? 'Free delivery!'
                           : `$${deliveryZone.delivery_fee} delivery fee`}
                         {' · '}
-                        ${deliveryZone.min_order_amount} minimum order
+                        ${deliveryZone.min_order} minimum order
                       </p>
                     </div>
                   </AlertDescription>

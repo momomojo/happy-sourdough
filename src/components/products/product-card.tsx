@@ -9,16 +9,16 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  // Get the lowest price from variants, or use base_price
+  // Get the lowest price from variants (base_price + price_adjustment)
   const minPrice = product.variants.length > 0
-    ? Math.min(...product.variants.map((v) => v.price))
+    ? Math.min(...product.variants.map((v) => product.base_price + v.price_adjustment))
     : product.base_price;
 
-  // Format price (assuming prices are in cents in database)
+  // Format price (assuming prices are in dollars, not cents)
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format(minPrice / 100);
+  }).format(minPrice);
 
   return (
     <Link href={`/products/${product.slug}`} className="block h-full">
@@ -83,7 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardFooter className="text-sm text-muted-foreground">
           <span className="capitalize">{product.category}</span>
           <span className="mx-2">•</span>
-          <span>{product.prep_time_hours}h prep time</span>
+          <span>{product.lead_time_hours}h prep time</span>
         </CardFooter>
       </Card>
     </Link>

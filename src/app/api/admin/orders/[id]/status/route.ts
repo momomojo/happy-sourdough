@@ -30,6 +30,7 @@ export async function PATCH(
       'ready',
       'out_for_delivery',
       'delivered',
+      'picked_up',
       'cancelled',
       'refunded',
     ];
@@ -61,15 +62,15 @@ export async function PATCH(
             .from('order_items')
             .select(`
               quantity,
-              products(name),
-              product_variants(name)
+              product_name,
+              variant_name
             `)
             .eq('order_id', id);
 
-          const items = (orderItems || []).map((item: any) => ({
-            product_name: item.products?.name || 'Unknown Product',
-            variant_name: item.product_variants?.name || null,
-            quantity: item.quantity,
+          const items = (orderItems || []).map((item: Record<string, unknown>) => ({
+            product_name: item.product_name as string || 'Unknown Product',
+            variant_name: item.variant_name as string | null,
+            quantity: item.quantity as number,
           }));
 
           // Get time slot if available
@@ -82,21 +83,29 @@ export async function PATCH(
               .single();
 
             if (slot) {
+              const slotData = slot as Record<string, unknown>;
               timeSlot = {
-                date: slot.date,
-                windowStart: slot.window_start,
-                windowEnd: slot.window_end,
+                date: slotData.date as string,
+                windowStart: slotData.window_start as string,
+                windowEnd: slotData.window_end as string,
               };
             }
+          }
+
+          // Format delivery address for email
+          let deliveryAddressStr: string | undefined;
+          if (order.delivery_address) {
+            const addr = order.delivery_address;
+            deliveryAddressStr = `${addr.street}${addr.apt ? `, ${addr.apt}` : ''}, ${addr.city}, ${addr.state} ${addr.zip}`;
           }
 
           await sendOrderReadyEmail({
             orderNumber: order.order_number,
             customerName: order.customer_name,
             customerEmail: order.customer_email,
-            deliveryType: order.delivery_type,
+            deliveryType: order.fulfillment_type,
             items,
-            deliveryAddress: order.delivery_address || undefined,
+            deliveryAddress: deliveryAddressStr,
             deliveryETA: order.delivery_window,
             timeSlot,
           });
@@ -110,7 +119,7 @@ export async function PATCH(
             customerName: order.customer_name,
             customerEmail: order.customer_email,
             status: status,
-            deliveryType: order.delivery_type,
+            deliveryType: order.fulfillment_type,
             estimatedTime: order.delivery_window,
           });
         }
