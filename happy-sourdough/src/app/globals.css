@@ -1,0 +1,401 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Happy Sourdough Bakery Theme */
+/* Reference: happy-sourdough:shadcn-bakery-ui skill */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* Happy Sourdough Bakery Colors */
+  /* Primary: Dark espresso brown */
+  --background: oklch(0.978 0.004 90);  /* Cream/flour white */
+  --foreground: oklch(0.20 0.02 50);    /* Dark espresso */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.02 50);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.02 50);
+
+  /* Primary: Espresso brown */
+  --primary: oklch(0.35 0.05 50);
+  --primary-foreground: oklch(0.98 0.005 90);
+
+  /* Secondary: Warm crust orange */
+  --secondary: oklch(0.70 0.15 55);
+  --secondary-foreground: oklch(0.20 0.02 50);
+
+  --muted: oklch(0.95 0.01 90);
+  --muted-foreground: oklch(0.50 0.02 50);
+
+  /* Accent: Golden honey */
+  --accent: oklch(0.80 0.18 85);
+  --accent-foreground: oklch(0.20 0.02 50);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.90 0.02 80);
+  --input: oklch(0.90 0.02 80);
+  --ring: oklch(0.60 0.12 55);
+
+  /* Chart colors - bakery themed */
+  --chart-1: oklch(0.70 0.15 55);   /* Crust orange */
+  --chart-2: oklch(0.80 0.18 85);   /* Honey gold */
+  --chart-3: oklch(0.35 0.05 50);   /* Espresso */
+  --chart-4: oklch(0.65 0.10 140);  /* Sage green */
+  --chart-5: oklch(0.75 0.08 25);   /* Warm rose */
+
+  --sidebar: oklch(0.98 0.005 90);
+  --sidebar-foreground: oklch(0.20 0.02 50);
+  --sidebar-primary: oklch(0.35 0.05 50);
+  --sidebar-primary-foreground: oklch(0.98 0.005 90);
+  --sidebar-accent: oklch(0.95 0.02 85);
+  --sidebar-accent-foreground: oklch(0.20 0.02 50);
+  --sidebar-border: oklch(0.90 0.02 80);
+  --sidebar-ring: oklch(0.60 0.12 55);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 50);   /* Dark espresso */
+  --foreground: oklch(0.95 0.005 90);  /* Cream */
+
+  --card: oklch(0.22 0.02 50);
+  --card-foreground: oklch(0.95 0.005 90);
+
+  --popover: oklch(0.22 0.02 50);
+  --popover-foreground: oklch(0.95 0.005 90);
+
+  --primary: oklch(0.80 0.18 85);      /* Honey gold in dark mode */
+  --primary-foreground: oklch(0.18 0.02 50);
+
+  --secondary: oklch(0.30 0.03 50);
+  --secondary-foreground: oklch(0.95 0.005 90);
+
+  --muted: oklch(0.28 0.02 50);
+  --muted-foreground: oklch(0.70 0.02 80);
+
+  --accent: oklch(0.70 0.15 55);       /* Crust orange in dark mode */
+  --accent-foreground: oklch(0.95 0.005 90);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.80 0.18 85);
+
+  --chart-1: oklch(0.75 0.16 55);
+  --chart-2: oklch(0.85 0.18 85);
+  --chart-3: oklch(0.70 0.08 50);
+  --chart-4: oklch(0.70 0.12 140);
+  --chart-5: oklch(0.78 0.10 25);
+
+  --sidebar: oklch(0.20 0.02 50);
+  --sidebar-foreground: oklch(0.95 0.005 90);
+  --sidebar-primary: oklch(0.80 0.18 85);
+  --sidebar-primary-foreground: oklch(0.18 0.02 50);
+  --sidebar-accent: oklch(0.28 0.02 50);
+  --sidebar-accent-foreground: oklch(0.95 0.005 90);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.80 0.18 85);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ================================
+   Happy Sourdough Custom Classes
+   ================================ */
+
+/* Product Card Hover Effect */
+.product-card-hover {
+  @apply transition-all duration-300 ease-out;
+}
+.product-card-hover:hover {
+  @apply -translate-y-1 shadow-lg;
+}
+
+/* Bakery Button Styles */
+.btn-bakery {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90
+         font-medium tracking-wide transition-all duration-200;
+}
+
+.btn-bakery-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80
+         font-medium transition-all duration-200;
+}
+
+.btn-bakery-accent {
+  @apply bg-accent text-accent-foreground hover:bg-accent/80
+         font-medium transition-all duration-200;
+}
+
+/* Order Status Badges */
+.status-received { @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200; }
+.status-confirmed { @apply bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200; }
+.status-baking { @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200; }
+.status-decorating { @apply bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200; }
+.status-quality_check { @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200; }
+.status-ready { @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200; }
+.status-out_for_delivery { @apply bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200; }
+.status-delivered { @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200; }
+.status-cancelled { @apply bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200; }
+.status-refunded { @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200; }
+
+/* Delivery Zone Indicators */
+.zone-1 { @apply border-l-4 border-l-green-500 bg-green-50 dark:bg-green-950; }
+.zone-2 { @apply border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950; }
+.zone-3 { @apply border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950; }
+
+/* Allergen Badges */
+.allergen-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+.allergen-wheat { @apply bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200; }
+.allergen-dairy { @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200; }
+.allergen-eggs { @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200; }
+.allergen-nuts { @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200; }
+.allergen-soy { @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200; }
+
+/* Price Display */
+.price-display {
+  @apply text-lg font-bold text-primary;
+}
+.price-compare {
+  @apply text-sm text-muted-foreground line-through;
+}
+
+/* Free Delivery Progress Bar */
+.free-delivery-progress {
+  @apply h-2 bg-muted rounded-full overflow-hidden;
+}
+.free-delivery-progress-bar {
+  @apply h-full bg-gradient-to-r from-secondary to-accent transition-all duration-500;
+}
+
+/* Hero Section */
+.hero-bakery {
+  @apply bg-gradient-to-br from-background via-secondary/10 to-accent/10;
+}
+
+/* Cart Badge */
+.cart-badge {
+  @apply absolute -top-2 -right-2 h-5 w-5 rounded-full bg-accent text-accent-foreground
+         text-xs font-bold flex items-center justify-center;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+.animate-bounce-subtle {
+  animation: bounceSubtle 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ================================
+   Mobile Responsiveness & Touch
+   ================================ */
+
+/* Touch-friendly tap targets on mobile */
+@media (max-width: 768px) {
+  /* Ensure minimum touch target sizes (44px recommended by Apple/Google) */
+  button:not(.no-touch-min),
+  a:not(.no-touch-min),
+  [role="button"]:not(.no-touch-min) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better spacing for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Prevent zoom on input focus on iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Add bottom padding to account for mobile nav */
+  main {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Improve touch feedback on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  button:active,
+  a:active,
+  [role="button"]:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* Hide scrollbar on mobile but keep functionality */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
+    -ms-overflow-style: none;
+  }
+}
+
+/* Accessibility: Enhanced focus visible states */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ================================
+   Print Styles for Production Lists
+   ================================ */
+@media print {
+  /* Hide non-essential elements */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Page layout */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Prevent page breaks inside cards */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Optimize spacing for print */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Make text more readable */
+  h1, h2, h3, h4, h5, h6 {
+    color: #000 !important;
+  }
+
+  /* Ensure checkboxes are visible */
+  input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 2px solid #000;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.25rem;
+    background: white;
+  }
+
+  /* Ensure badges and important elements are visible */
+  .badge {
+    border: 1px solid #000;
+    background: white !important;
+    color: #000 !important;
+  }
+
+  /* Cards should have visible borders */
+  .card {
+    border: 1px solid #ddd;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,533 @@
+ Complete System Architecture for Happy Sourdough Website
+
+  Research Summary
+
+  1. Your Current Plugin Inventory (6 Active)
+
+  | Plugin            | Purpose                                 | Sourdough Website Use                 |
+  |-------------------|-----------------------------------------|---------------------------------------|
+  | frontend-design   | Production-grade UI components          | Homepage, product pages, recipe cards |
+  | feature-dev       | Guided feature development              | Online ordering, blog, contact forms  |
+  | code-review       | Automated code quality checks           | Pre-commit quality gates              |
+  | commit-commands   | Git workflow (/commit, /commit-push-pr) | Version control automation            |
+  | pr-review-toolkit | 6 specialized PR review agents          | Comprehensive code review             |
+  | plugin-dev        | Create custom plugins/skills/agents     | Build sourdough-specific tools        |
+
+  2. MCP Landscape Updates (2025)
+
+  Key Anthropic Updates:
+  - Remote MCP Servers - No more local-only servers; connect over internet
+  (https://www.infoq.com/news/2025/06/anthropic-claude-remote-mcp/)
+  - OAuth 2.1 - Universal authentication support
+  (https://loginov-rocks.medium.com/build-remote-mcp-with-authorization-a2f394c669a8)
+  - Streamable HTTP - New transport, SSE deprecated (https://docs.anthropic.com/en/docs/claude-code/mcp)
+  - Tool Search Tool - 85% context reduction via lazy loading (https://www.anthropic.com/engineering/advanced-tool-use)
+  - Industry Adoption - OpenAI (March 2025), Google DeepMind (April 2025) adopted MCP
+
+  Docker MCP Ecosystem:
+  - 270+ MCP servers in Docker Hub catalog
+  - MCP Gateway - Centralized proxy for server management
+  - Gordon AI - Docker's MCP-enabled assistant
+  - Container isolation - Secure, sandboxed execution
+  - 1M+ pulls within weeks of launch
+
+  3. Context Optimization Strategies
+
+  | Strategy           | Reduction | Implementation               |
+  |--------------------|-----------|------------------------------|
+  | Tool Search Tool   | 85%       | defer_loading: true on tools |
+  | Lazy-MCP Proxy     | 95%       | On-demand tool activation    |
+  | Tool Consolidation | 60%       | Reduce 20→8 tools            |
+  | JSON Trimming      | 93-98%    | Minimal API responses        |
+  | McPick CLI         | Variable  | Toggle servers per session   |
+
+  The Problem: MCP tools can consume 66,000-134,000 tokens before conversation starts.
+
+  Solution Stack:
+  1. Use Docker MCP Toolkit for unified management
+  2. Enable only needed servers per task
+  3. Implement lazy loading patterns
+  4. Use MAX_MCP_OUTPUT_TOKENS env var (default 25,000)
+
+  ---
+  Proposed Architecture for Happy Sourdough
+
+  Phase 1: MVP Generation Stack
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                    HAPPY SOURDOUGH DEV SYSTEM                    │
+  ├─────────────────────────────────────────────────────────────────┤
+  │  LAYER 1: MCP SERVERS (Docker Containerized)                    │
+  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │
+  │  │ github-      │ │ playwright-  │ │ filesystem   │            │
+  │  │ official     │ │ mcp-server   │ │              │            │
+  │  └──────────────┘ └──────────────┘ └──────────────┘            │
+  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │
+  │  │ stripe       │ │ git          │ │ slack        │            │
+  │  │ (payments)   │ │ (local ops)  │ │ (notifs)     │            │
+  │  └──────────────┘ └──────────────┘ └──────────────┘            │
+  ├─────────────────────────────────────────────────────────────────┤
+  │  LAYER 2: PLUGINS (Already Installed)                           │
+  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │
+  │  │ frontend-    │ │ feature-dev  │ │ code-review  │            │
+  │  │ design       │ │              │ │              │            │
+  │  └──────────────┘ └──────────────┘ └──────────────┘            │
+  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │
+  │  │ commit-      │ │ pr-review-   │ │ plugin-dev   │            │
+  │  │ commands     │ │ toolkit      │ │              │            │
+  │  └──────────────┘ └──────────────┘ └──────────────┘            │
+  ├─────────────────────────────────────────────────────────────────┤
+  │  LAYER 3: CUSTOM AGENTS (To Create)                             │
+  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │
+  │  │ sourdough-   │ │ e2e-test-    │ │ deploy-      │            │
+  │  │ content-gen  │ │ runner       │ │ manager      │            │
+  │  └──────────────┘ └──────────────┘ └──────────────┘            │
+  ├─────────────────────────────────────────────────────────────────┤
+  │  LAYER 4: CUSTOM SKILLS (To Create)                             │
+  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │
+  │  │ sourdough-   │ │ recipe-      │ │ accessibility│            │
+  │  │ branding     │ │ formatter    │ │ checker      │            │
+  │  └──────────────┘ └──────────────┘ └──────────────┘            │
+  └─────────────────────────────────────────────────────────────────┘
+
+  Phase 2: MCP Servers to Add
+
+  | Server                | Purpose                                  | Priority |
+  |-----------------------|------------------------------------------|----------|
+  | github-official       | Full GitHub integration (already active) | ✅ Active |
+  | playwright-mcp-server | Browser automation, E2E testing          | High     |
+  | filesystem            | Local file operations                    | High     |
+  | stripe                | Payment processing                       | Medium   |
+  | git                   | Local git operations                     | Medium   |
+  | slack                 | Team notifications                       | Low      |
+
+  Phase 3: Custom Agents to Create
+
+  1. sourdough-content-gen Agent
+
+  Purpose: Generate sourdough-specific content
+  Triggers: "create recipe", "write product description", "generate blog post"
+  Tools: WebSearch, Write, Read
+  Specialization:
+  - Sourdough terminology
+  - Recipe formatting
+  - SEO for bakery businesses
+
+  2. e2e-test-runner Agent
+
+  Purpose: Automated visual and functional testing
+  Triggers: After feature completion, before PR merge
+  Tools: Playwright MCP, browser_snapshot, browser_click
+  Specialization:
+  - Mobile responsive testing
+  - Checkout flow validation
+  - Form submission testing
+
+  3. deploy-manager Agent
+
+  Purpose: Manage deployments and environments
+  Triggers: "deploy to staging", "release to production"
+  Tools: Bash, GitHub MCP
+  Specialization:
+  - Vercel/Netlify deployments
+  - Environment variable management
+  - Rollback procedures
+
+  Phase 4: Custom Skills to Create
+
+  1. sourdough-branding Skill
+
+  Purpose: Ensure consistent brand voice and visual identity
+  Includes:
+  - Color palette definitions
+  - Typography guidelines
+  - Tone of voice examples
+  - Logo usage rules
+
+  2. recipe-formatter Skill
+
+  Purpose: Format recipes consistently
+  Includes:
+  - Ingredient list structure
+  - Step-by-step instructions format
+  - Timing and yield calculations
+  - Nutritional info templates
+
+  3. accessibility-checker Skill
+
+  Purpose: Ensure WCAG compliance
+  Includes:
+  - Color contrast requirements
+  - Alt text guidelines
+  - Keyboard navigation patterns
+  - Screen reader compatibility
+
+  ---
+  Implementation Roadmap
+
+  Immediate Actions (Today)
+
+  1. Add Playwright MCP for testing
+  # Via Docker MCP Toolkit
+
+  2. Add Filesystem MCP for file operations
+  3. Create project structure
+  sourdough-website/
+  ├── .claude/
+  │   ├── agents/
+  │   │   └── sourdough-content-gen.md
+  │   ├── skills/
+  │   │   └── sourdough-branding/
+  │   └── CLAUDE.md
+  ├── src/
+  ├── tests/
+  └── .mcp.json
+
+  Context Optimization Config
+
+  // .mcp.json with lazy loading
+  {
+    "mcpServers": {
+      "github-official": {
+        "command": "docker",
+        "args": ["run", "-i", "mcp/github-official"],
+        "defer_loading": false  // Always needed
+      },
+      "playwright": {
+        "command": "docker",
+        "args": ["run", "-i", "mcp/playwright-mcp-server"],
+        "defer_loading": true   // Load only for testing
+      },
+      "stripe": {
+        "command": "docker",
+        "args": ["run", "-i", "mcp/stripe"],
+        "defer_loading": true   // Load only for payments
+      }
+    }
+  }
+
+  ---
+  What's Missing & Needs Setup
+
+  | Component         | Status          | Action Required               |
+  |-------------------|-----------------|-------------------------------|
+  | Playwright MCP    | Not added       | mcp-add playwright-mcp-server |
+  | Filesystem MCP    | Not added       | mcp-add filesystem            |
+  | Stripe MCP        | Not added       | mcp-add stripe + API key      |
+  | Git MCP           | Not added       | mcp-add git                   |
+  | Custom agents     | Not created     | Use plugin-dev to create      |
+  | Custom skills     | Not created     | Use skill-development guide   |
+  | GitHub repo       | Not initialized | git init + create repo        |
+  | Project CLAUDE.md | Not created     | Define project context        |
+
+  ---
+  Recommended Workflow
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │                    DEVELOPMENT WORKFLOW                      │
+  ├─────────────────────────────────────────────────────────────┤
+  │                                                              │
+  │  1. PLAN          /feature-dev "add recipe page"            │
+  │       │           → code-architect agent designs            │
+  │       ▼                                                      │
+  │  2. BUILD         frontend-design skill generates UI        │
+  │       │           → Write components                         │
+  │       ▼                                                      │
+  │  3. TEST          e2e-test-runner agent validates           │
+  │       │           → Playwright runs browser tests            │
+  │       ▼                                                      │
+  │  4. REVIEW        /code-review or pr-review-toolkit         │
+  │       │           → 6 specialized agents check code          │
+  │       ▼                                                      │
+  │  5. COMMIT        /commit-push-pr                            │
+  │       │           → Automated git workflow                   │
+  │       ▼                                                      │
+  │  6. DEPLOY        deploy-manager agent handles               │
+  │                   → Push to staging/production               │
+  │                                                              │
+  └─────────────────────────────────────────────────────────────┘
+
+  ---
+  Next Steps
+
+  Would you like me to:
+
+  1. Set up the MCP servers - Add Playwright, Filesystem, etc.
+  2. Create the custom agents - Build sourdough-content-gen, e2e-test-runner
+  3. Create the custom skills - Build sourdough-branding, recipe-formatter
+  4. Initialize the project structure - Set up folders, CLAUDE.md, .mcp.json
+  5. Create a GitHub repository - Initialize git and create remote repo
+
+  Sources:
+  - https://www.infoq.com/news/2025/06/anthropic-claude-remote-mcp/
+  - https://docs.anthropic.com/en/docs/claude-code/mcp
+  - https://www.anthropic.com/engineering/advanced-tool-use
+  - https://github.com/anthropics/claude-code/issues/7336
+  - https://scottspence.com/posts/optimising-mcp-server-context-usage-in-claude-code
+  - https://dev.to/stacklok/cut-token-waste-from-your-ai-workflow-with-the-toolhive-mcp-optimizer-3oo6
+  - https://www.docker.com/blog/announcing-docker-mcp-catalog-and-toolkit-beta/
+
+
+ Updated Architecture: Aligned with Happy Sourdough Blueprint
+
+  Alignment Summary
+
+  | Blueprint Component   | MCP/Tool Solution      | Availability |
+  |-----------------------|------------------------|--------------|
+  | Supabase (PostgreSQL) | database-server MCP    | ✅ Available  |
+  | Supabase Auth/Storage | Supabase CLI via Bash  | 🔧 CLI       |
+  | Stripe                | stripe MCP             | ✅ Available  |
+  | Next.js + shadcn/ui   | frontend-design plugin | ✅ Installed  |
+  | Vercel                | Vercel CLI via Bash    | 🔧 CLI       |
+  | Resend                | Custom agent/hook      | 🔨 Create    |
+  | PostHog               | Custom agent/hook      | 🔨 Create    |
+  | Sentry                | Custom agent/hook      | 🔨 Create    |
+  | GitHub                | github-official MCP    | ✅ Active     |
+  | E2E Testing           | playwright MCP         | ✅ Available  |
+
+  ---
+  Complete System Architecture (Aligned)
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │                 HAPPY SOURDOUGH DEVELOPMENT SYSTEM                       │
+  │                    (Aligned with Blueprint PRD)                          │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │                                                                          │
+  │  ┌─────────────────────────────────────────────────────────────────┐    │
+  │  │ LAYER 1: MCP SERVERS (Docker Containerized)                      │    │
+  │  ├─────────────────────────────────────────────────────────────────┤    │
+  │  │                                                                   │    │
+  │  │  CORE (Always Loaded - defer_loading: false)                     │    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ github-      │ │ filesystem   │ │ playwright   │             │    │
+  │  │  │ official     │ │              │ │              │             │    │
+  │  │  │ (version     │ │ (local file  │ │ (E2E tests)  │             │    │
+  │  │  │ control)     │ │ ops)         │ │              │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  │                                                                   │    │
+  │  │  ON-DEMAND (defer_loading: true - saves 60%+ context)            │    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ stripe       │ │ database-    │ │ tavily       │             │    │
+  │  │  │ (payments)   │ │ server       │ │ (research)   │             │    │
+  │  │  │              │ │ (Supabase    │ │              │             │    │
+  │  │  │              │ │ PostgreSQL)  │ │              │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  └─────────────────────────────────────────────────────────────────┘    │
+  │                                                                          │
+  │  ┌─────────────────────────────────────────────────────────────────┐    │
+  │  │ LAYER 2: PLUGINS (Installed)                                     │    │
+  │  ├─────────────────────────────────────────────────────────────────┤    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ frontend-    │ │ feature-dev  │ │ code-review  │             │    │
+  │  │  │ design       │ │              │ │              │             │    │
+  │  │  │ (Next.js +   │ │ (Feature     │ │ (Quality     │             │    │
+  │  │  │ shadcn/ui)   │ │ workflow)    │ │ gates)       │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ commit-      │ │ pr-review-   │ │ plugin-dev   │             │    │
+  │  │  │ commands     │ │ toolkit      │ │              │             │    │
+  │  │  │ (Git flow)   │ │ (6 agents)   │ │ (Custom      │             │    │
+  │  │  │              │ │              │ │ creation)    │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  └─────────────────────────────────────────────────────────────────┘    │
+  │                                                                          │
+  │  ┌─────────────────────────────────────────────────────────────────┐    │
+  │  │ LAYER 3: CUSTOM AGENTS (To Create)                               │    │
+  │  ├─────────────────────────────────────────────────────────────────┤    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ bakery-mvp   │ │ supabase-    │ │ vercel-      │             │    │
+  │  │  │ generator    │ │ manager      │ │ deployer     │             │    │
+  │  │  │              │ │              │ │              │             │    │
+  │  │  │ Scaffolds    │ │ DB schema,   │ │ Deploy,      │             │    │
+  │  │  │ product,     │ │ migrations,  │ │ preview,     │             │    │
+  │  │  │ order, zone  │ │ auth config  │ │ promote      │             │    │
+  │  │  │ pages        │ │              │ │              │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ stripe-      │ │ e2e-test-    │ │ observability│             │    │
+  │  │  │ integrator   │ │ runner       │ │ -manager     │             │    │
+  │  │  │              │ │              │ │              │             │    │
+  │  │  │ Checkout,    │ │ Playwright   │ │ PostHog,     │             │    │
+  │  │  │ webhooks,    │ │ tests for    │ │ Sentry,      │             │    │
+  │  │  │ portal       │ │ checkout     │ │ Resend       │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  └─────────────────────────────────────────────────────────────────┘    │
+  │                                                                          │
+  │  ┌─────────────────────────────────────────────────────────────────┐    │
+  │  │ LAYER 4: CUSTOM SKILLS (To Create)                               │    │
+  │  ├─────────────────────────────────────────────────────────────────┤    │
+  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │    │
+  │  │  │ bakery-      │ │ delivery-    │ │ production-  │             │    │
+  │  │  │ schema       │ │ zones        │ │ lists        │             │    │
+  │  │  │              │ │              │ │              │             │    │
+  │  │  │ products,    │ │ Zone 1-3     │ │ Auto-gen     │             │    │
+  │  │  │ variants,    │ │ config,      │ │ daily lists, │             │    │
+  │  │  │ orders,      │ │ fee calc,    │ │ ingredient   │             │    │
+  │  │  │ time_slots   │ │ minimums     │ │ summaries    │             │    │
+  │  │  └──────────────┘ └──────────────┘ └──────────────┘             │    │
+  │  │  ┌──────────────┐ ┌──────────────┐                              │    │
+  │  │  │ order-       │ │ shadcn-      │                              │    │
+  │  │  │ workflow     │ │ bakery-ui    │                              │    │
+  │  │  │              │ │              │                              │    │
+  │  │  │ Received →   │ │ Product      │                              │    │
+  │  │  │ Baking →     │ │ cards,       │                              │    │
+  │  │  │ Decorating → │ │ order forms, │                              │    │
+  │  │  │ Ready →      │ │ admin dash   │                              │    │
+  │  │  │ Delivered    │ │ components   │                              │    │
+  │  │  └──────────────┘ └──────────────┘                              │    │
+  │  └─────────────────────────────────────────────────────────────────┘    │
+  │                                                                          │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  ---
+  Blueprint Feature Mapping
+
+  Database Schema (from your PRD) → Implementation
+
+  | Table            | Implementation Approach                   |
+  |------------------|-------------------------------------------|
+  | products         | bakery-schema skill + Supabase migration  |
+  | product_variants | bakery-schema skill + Supabase migration  |
+  | orders           | order-workflow skill defines status flow  |
+  | order_items      | bakery-schema skill                       |
+  | delivery_zones   | delivery-zones skill with Zone 1-3 config |
+  | time_slots       | bakery-schema skill with capacity limits  |
+
+  Admin Dashboard Features → Agents
+
+  | Feature                | Agent/Skill                        |
+  |------------------------|------------------------------------|
+  | Real-time order view   | supabase-manager + frontend-design |
+  | Custom status workflow | order-workflow skill               |
+  | Daily production list  | production-lists skill             |
+  | Ingredient summaries   | production-lists skill             |
+  | Route optimization     | Future enhancement                 |
+
+  ---
+  MCP Configuration (Context-Optimized)
+
+  // .mcp.json - Lazy loading enabled
+  {
+    "mcpServers": {
+      "github-official": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "mcp/github-official"],
+        "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" },
+        "defer_loading": false
+      },
+      "filesystem": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "-v", "${PWD}:/workspace", "mcp/filesystem"],
+        "defer_loading": false
+      },
+      "playwright": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "mcp/playwright"],
+        "defer_loading": true
+      },
+      "stripe": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "mcp/stripe"],
+        "env": { "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}" },
+        "defer_loading": true
+      },
+      "database-server": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "mcp/database-server"],
+        "env": { "DATABASE_URL": "${SUPABASE_DB_URL}" },
+        "defer_loading": true
+      }
+    }
+  }
+
+  Context Savings: ~60% reduction by deferring Stripe, database, and Playwright until needed.
+
+  ---
+  Implementation Phases (Aligned with PRD Priorities)
+
+  Phase 1: Core MVP (Priority 1-3 from PRD)
+
+  1. Product catalog with variations     → frontend-design + bakery-schema
+  2. Guest checkout                      → frontend-design + Stripe MCP
+  3. Order scheduling with lead times   → bakery-schema + time_slots
+  4. Delivery zone configuration        → delivery-zones skill
+
+  Phase 2: Backend Integration (Priority 4)
+
+  5. Stripe webhooks → Supabase sync    → stripe-integrator agent
+  6. Admin dashboard                     → supabase-manager agent
+
+  Phase 3: Customer Features (Priority 5-6)
+
+  7. Customer accounts                   → Supabase Auth
+  8. Order history + reordering          → supabase-manager agent
+
+  Phase 4: Growth (Priority 7)
+
+  9. Loyalty program                     → Future custom agent
+
+  ---
+  Workflow: Blueprint → Production
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                    ALIGNED DEVELOPMENT WORKFLOW                  │
+  ├─────────────────────────────────────────────────────────────────┤
+  │                                                                  │
+  │  1. SCAFFOLD        /feature-dev "create product catalog"       │
+  │       │             → Uses bakery-schema skill                   │
+  │       │             → Uses shadcn-bakery-ui skill                │
+  │       ▼                                                          │
+  │  2. DATABASE        supabase-manager agent                       │
+  │       │             → Creates migrations                         │
+  │       │             → Sets up RLS policies                       │
+  │       ▼                                                          │
+  │  3. BUILD           frontend-design skill                        │
+  │       │             → Next.js 15 + shadcn/ui                     │
+  │       │             → Product cards, order forms                 │
+  │       ▼                                                          │
+  │  4. INTEGRATE       stripe-integrator agent                      │
+  │       │             → Checkout, webhooks, portal                 │
+  │       ▼                                                          │
+  │  5. TEST            e2e-test-runner agent                        │
+  │       │             → Playwright tests checkout flow             │
+  │       │             → Tests delivery zone pricing                │
+  │       ▼                                                          │
+  │  6. REVIEW          /code-review + pr-review-toolkit             │
+  │       │             → 6 specialized agents                       │
+  │       ▼                                                          │
+  │  7. DEPLOY          vercel-deployer agent                        │
+  │       │             → Preview → Staging → Production             │
+  │       ▼                                                          │
+  │  8. OBSERVE         observability-manager agent                  │
+  │                     → PostHog analytics                          │
+  │                     → Sentry error tracking                      │
+  │                     → Resend transactional emails                │
+  │                                                                  │
+  └─────────────────────────────────────────────────────────────────┘
+
+  ---
+  What Needs to Be Created
+
+  | Component             | Type  | Priority | Description                    |
+  |-----------------------|-------|----------|--------------------------------|
+  | bakery-schema         | Skill | High     | DB schema definitions from PRD |
+  | delivery-zones        | Skill | High     | Zone 1-3 pricing logic         |
+  | order-workflow        | Skill | High     | Status flow definition         |
+  | shadcn-bakery-ui      | Skill | High     | UI component patterns          |
+  | production-lists      | Skill | Medium   | Daily production automation    |
+  | supabase-manager      | Agent | High     | DB operations agent            |
+  | vercel-deployer       | Agent | High     | Deployment automation          |
+  | stripe-integrator     | Agent | High     | Payment integration            |
+  | e2e-test-runner       | Agent | Medium   | Playwright test orchestration  |
+  | observability-manager | Agent | Low      | PostHog/Sentry/Resend          |
+
+  ---
+  Next Steps
+
+  Would you like me to:
+
+  1. Add the MCP servers (stripe, database-server, playwright, filesystem)
+  2. Create the custom skills (bakery-schema, delivery-zones, etc.)
+  3. Create the custom agents (supabase-manager, vercel-deployer, etc.)
+  4. Initialize the project structure with CLAUDE.md and .mcp.json
+  5. Start building Phase 1 (product catalog MVP)

@@ -1,0 +1,22 @@
+# MCP configuration (contains database credentials)
+.mcp.json
+
+# IDE and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+~*
+
+# Claude artifacts (design/planning docs - keep in repo for context)
+# archetecture engneering.txt - keeping this
+# compass_artifact_*.md - keeping this
