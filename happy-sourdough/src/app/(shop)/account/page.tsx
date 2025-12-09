@@ -25,9 +25,11 @@ export default async function AccountPage() {
     <div className="container mx-auto max-w-5xl px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">My Account</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage your profile, orders, and preferences
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          My Account
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Welcome back! Manage your profile, orders, and preferences
         </p>
       </div>
 
@@ -35,32 +37,41 @@ export default async function AccountPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Profile Information */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Profile Information</CardTitle>
+        <Card className="border-2 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -translate-y-16 translate-x-16" />
+          <CardHeader className="relative">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-primary/10">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="text-xl">Profile Information</CardTitle>
             </div>
             <CardDescription>Your personal details</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Name</p>
-              <p className="text-base">
-                {profile?.first_name || profile?.last_name
-                  ? `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
-                  : 'Not set'}
-              </p>
+          <CardContent className="space-y-4 relative">
+            <div className="space-y-3">
+              <div className="pb-3 border-b border-border/40">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Name</p>
+                <p className="text-base font-medium">
+                  {profile?.first_name || profile?.last_name
+                    ? `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
+                    : 'Not set'}
+                </p>
+              </div>
+              <div className="pb-3 border-b border-border/40">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Email</p>
+                <p className="text-base font-medium">{user.email}</p>
+              </div>
+              <div className="pb-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Phone</p>
+                <p className="text-base font-medium">{profile?.phone || 'Not set'}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p className="text-base">{user.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Phone</p>
-              <p className="text-base">{profile?.phone || 'Not set'}</p>
-            </div>
-            <Button variant="outline" className="w-full" asChild>
+            <Button
+              variant="outline"
+              className="w-full mt-4 border-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200"
+              asChild
+            >
               <Link href="/account/profile">
                 <Settings className="mr-2 h-4 w-4" />
                 Edit Profile
@@ -72,32 +83,46 @@ export default async function AccountPage() {
         {/* Quick Links */}
         <div className="space-y-6">
           {/* Orders */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-muted-foreground" />
-                <CardTitle>Order History</CardTitle>
+          <Card className="border-2 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-secondary/10 rounded-full -translate-y-12 translate-x-12 group-hover:scale-110 transition-transform duration-300" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-secondary/10">
+                  <Package className="h-5 w-5 text-secondary" />
+                </div>
+                <CardTitle className="text-xl">Order History</CardTitle>
               </div>
-              <CardDescription>View your past orders</CardDescription>
+              <CardDescription>View and track your fresh bread orders</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full" asChild>
+            <CardContent className="relative">
+              <Button
+                variant="outline"
+                className="w-full border-2 hover:bg-secondary/5 hover:border-secondary/50 transition-all duration-200"
+                asChild
+              >
                 <Link href="/account/orders">View Orders</Link>
               </Button>
             </CardContent>
           </Card>
 
           {/* Addresses */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <CardTitle>Saved Addresses</CardTitle>
+          <Card className="border-2 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full -translate-y-12 translate-x-12 group-hover:scale-110 transition-transform duration-300" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-accent/10">
+                  <MapPin className="h-5 w-5 text-accent-foreground" />
+                </div>
+                <CardTitle className="text-xl">Saved Addresses</CardTitle>
               </div>
-              <CardDescription>Manage your delivery addresses</CardDescription>
+              <CardDescription>Quick checkout for your favorite delivery spots</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full" asChild>
+            <CardContent className="relative">
+              <Button
+                variant="outline"
+                className="w-full border-2 hover:bg-accent/5 hover:border-accent/50 transition-all duration-200"
+                asChild
+              >
                 <Link href="/account/addresses">Manage Addresses</Link>
               </Button>
             </CardContent>
@@ -107,10 +132,10 @@ export default async function AccountPage() {
 
       {/* Marketing Preferences */}
       <div className="mt-6">
-        <Card>
+        <Card className="border-2 shadow-md rounded-xl">
           <CardHeader>
-            <CardTitle>Preferences</CardTitle>
-            <CardDescription>Manage your communication preferences</CardDescription>
+            <CardTitle className="text-xl">Preferences</CardTitle>
+            <CardDescription>Stay updated on fresh bakes and special offers</CardDescription>
           </CardHeader>
           <CardContent>
             <MarketingPreferences

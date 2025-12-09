@@ -28,7 +28,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Mobile Menu Button */}
@@ -45,29 +45,32 @@ export function Header() {
             {/* Logo */}
             <Link
               href="/"
-              className="flex items-center space-x-2 text-lg font-bold md:mr-8"
+              className="flex items-center space-x-2.5 text-lg font-bold md:mr-8 group transition-all duration-200 hover:scale-105"
             >
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                HS
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:rotate-6">
+                <span className="text-sm font-bold">HS</span>
               </div>
-              <span className="hidden sm:inline-block">Happy Sourdough</span>
-              <span className="sm:hidden">HS</span>
+              <span className="hidden sm:inline-block bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Happy Sourdough</span>
+              <span className="sm:hidden bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">HS</span>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex md:flex-1 md:items-center md:space-x-6">
+            <nav className="hidden md:flex md:flex-1 md:items-center md:space-x-1">
               {navigationLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'text-sm font-medium transition-colors hover:text-primary',
+                    'text-sm font-semibold transition-all duration-200 px-3 py-2 rounded-lg relative group',
                     pathname === link.href
-                      ? 'text-foreground'
-                      : 'text-muted-foreground'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                   )}
                 >
                   {link.label}
+                  {pathname === link.href && (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
+                  )}
                 </Link>
               ))}
             </nav>
@@ -76,11 +79,11 @@ export function Header() {
             <div className="flex items-center space-x-2">
               {/* Desktop Search */}
               <div className="hidden lg:flex items-center relative">
-                <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 h-4 w-4 text-muted-foreground transition-colors duration-200 peer-focus:text-primary" />
                 <Input
                   type="search"
                   placeholder="Search products..."
-                  className="pl-9 w-64"
+                  className="pl-9 w-64 peer border-border/50 focus:border-primary/50 shadow-sm focus:shadow-md transition-all duration-200"
                 />
               </div>
 
@@ -111,7 +114,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative"
+                className="relative hover:bg-accent/80"
                 onClick={() => setCartOpen(true)}
                 aria-label={`Shopping cart with ${itemCount} items`}
               >
@@ -119,7 +122,7 @@ export function Header() {
                 {itemCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-bounce-subtle bg-accent text-accent-foreground border-2 border-background shadow-lg"
                   >
                     {itemCount > 9 ? '9+' : itemCount}
                   </Badge>

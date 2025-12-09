@@ -7,14 +7,22 @@ export default function AboutPage() {
         <div className="flex flex-col min-h-screen">
             {/* Hero Section - Bakery Story */}
             <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-amber-100 dark:from-stone-900 dark:to-stone-800 -z-10" />
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-amber-100 dark:from-stone-900 dark:via-stone-850 dark:to-stone-800 -z-10" />
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-40 mix-blend-overlay -z-10" />
 
+                {/* Decorative wheat grain elements */}
+                <div className="absolute top-10 left-10 opacity-10 dark:opacity-5">
+                    <Wheat className="w-32 h-32 text-primary rotate-12" />
+                </div>
+                <div className="absolute bottom-10 right-10 opacity-10 dark:opacity-5">
+                    <Wheat className="w-24 h-24 text-primary -rotate-12" />
+                </div>
+
                 <div className="container px-4 text-center z-10 animate-fade-in">
-                    <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary font-semibold text-sm mb-6 tracking-wide uppercase">
+                    <span className="inline-block py-2 px-4 rounded-full bg-primary/10 text-primary font-semibold text-sm mb-6 tracking-wide uppercase border border-primary/20">
                         Our Story
                     </span>
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground mb-6 drop-shadow-sm">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 drop-shadow-sm">
                         Crafted with Care, <br className="hidden md:block" />
                         <span className="text-primary">Baked with Love</span>
                     </h1>
@@ -27,46 +35,54 @@ export default function AboutPage() {
             </section>
 
             {/* Our Philosophy */}
-            <section className="py-24 bg-background">
-                <div className="container px-4">
+            <section className="py-24 bg-background relative overflow-hidden">
+                {/* Subtle background pattern */}
+                <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.01]"
+                     style={{backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px'}}>
+                </div>
+
+                <div className="container px-4 relative">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Philosophy</h2>
+                        <span className="inline-block py-1 px-3 rounded-full bg-primary/5 text-primary font-medium text-sm mb-4 tracking-wide">
+                            WHAT MAKES US DIFFERENT
+                        </span>
+                        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Our Philosophy</h2>
                         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                             Three core principles guide everything we bake
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        <div className="text-center space-y-4 p-8 rounded-2xl hover:bg-accent/20 transition-colors">
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+                        <div className="text-center space-y-4 p-8 rounded-2xl bg-gradient-to-br from-background to-muted/20 border border-primary/5 hover:border-primary/20 hover:shadow-lg transition-all duration-300 group">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full flex items-center justify-center mx-auto text-primary group-hover:scale-110 transition-transform duration-300">
                                 <Clock className="w-10 h-10" />
                             </div>
-                            <h3 className="text-2xl font-bold">Slow Fermentation</h3>
-                            <p className="text-muted-foreground leading-relaxed">
+                            <h3 className="text-2xl font-bold text-foreground">Slow Fermentation</h3>
+                            <p className="text-muted-foreground leading-relaxed text-base">
                                 We never rush the process. Our sourdough undergoes a minimum 48-hour fermentation,
                                 allowing natural wild yeast to work its magic. This creates complex flavors, better
                                 digestibility, and bread that tastes like it should.
                             </p>
                         </div>
 
-                        <div className="text-center space-y-4 p-8 rounded-2xl hover:bg-accent/20 transition-colors">
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                        <div className="text-center space-y-4 p-8 rounded-2xl bg-gradient-to-br from-background to-muted/20 border border-primary/5 hover:border-primary/20 hover:shadow-lg transition-all duration-300 group">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full flex items-center justify-center mx-auto text-primary group-hover:scale-110 transition-transform duration-300">
                                 <Wheat className="w-10 h-10" />
                             </div>
-                            <h3 className="text-2xl font-bold">Organic Ingredients</h3>
-                            <p className="text-muted-foreground leading-relaxed">
+                            <h3 className="text-2xl font-bold text-foreground">Organic Ingredients</h3>
+                            <p className="text-muted-foreground leading-relaxed text-base">
                                 Every loaf starts with certified organic flour, filtered water, and sea salt. No additives,
                                 no preservatives, no shortcuts. Just pure, wholesome ingredients that you can pronounce
                                 and your body can recognize.
                             </p>
                         </div>
 
-                        <div className="text-center space-y-4 p-8 rounded-2xl hover:bg-accent/20 transition-colors">
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                        <div className="text-center space-y-4 p-8 rounded-2xl bg-gradient-to-br from-background to-muted/20 border border-primary/5 hover:border-primary/20 hover:shadow-lg transition-all duration-300 group">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full flex items-center justify-center mx-auto text-primary group-hover:scale-110 transition-transform duration-300">
                                 <Leaf className="w-10 h-10" />
                             </div>
-                            <h3 className="text-2xl font-bold">Local Sourcing</h3>
-                            <p className="text-muted-foreground leading-relaxed">
+                            <h3 className="text-2xl font-bold text-foreground">Local Sourcing</h3>
+                            <p className="text-muted-foreground leading-relaxed text-base">
                                 We partner with regional mills and local farmers to source heritage grains and seasonal
                                 ingredients. Supporting our community means fresher products for you and a sustainable
                                 future for everyone.

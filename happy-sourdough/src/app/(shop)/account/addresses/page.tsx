@@ -25,15 +25,17 @@ export default async function AddressesPage() {
       <div className="mb-8">
         <Link
           href="/account"
-          className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Account
         </Link>
 
-        <h1 className="text-3xl font-bold tracking-tight">Saved Addresses</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage your delivery addresses for faster checkout
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Saved Addresses
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Manage your delivery addresses for quick and easy checkout
         </p>
       </div>
 

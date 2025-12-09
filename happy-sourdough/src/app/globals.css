@@ -3,14 +3,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Happy Sourdough Bakery Theme */
-/* Reference: happy-sourdough:shadcn-bakery-ui skill */
+/* ========================================
+   Happy Sourdough Bakery Theme
+   Premium Artisan Design System
+   ========================================
+
+   Color Philosophy:
+   - Rich espresso browns (not pure black)
+   - Warm crust oranges and amber tones
+   - Honey gold accents for highlights
+   - Cream/off-white backgrounds (flour inspired)
+   - Dark mode: Warm evening bakery (not cold blue-gray)
+
+   Typography:
+   - Headings: Fraunces (soft serifs, warmth)
+   - Body: DM Sans (clean, readable)
+   - Accent: Cormorant Garamond (elegant moments)
+
+   Reference: happy-sourdough:shadcn-bakery-ui skill
+   ======================================== */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+
+  /* Typography */
+  --font-sans: var(--font-body);
+  --font-body: var(--font-body);
+  --font-heading: var(--font-heading);
+  --font-accent: var(--font-accent);
   --font-mono: var(--font-geist-mono);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -47,105 +70,187 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
-  /* Happy Sourdough Bakery Colors */
-  /* Primary: Dark espresso brown */
-  --background: oklch(0.978 0.004 90);  /* Cream/flour white */
-  --foreground: oklch(0.20 0.02 50);    /* Dark espresso */
+  /* ========================================
+     Happy Sourdough Premium Color Palette
+     Warm, Artisan, Inviting
+     ======================================== */
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.02 50);
+  /* Backgrounds: Warm cream tones inspired by fresh dough */
+  --background: oklch(0.97 0.015 75);      /* Warm cream with subtle golden undertone */
+  --foreground: oklch(0.25 0.03 45);       /* Rich espresso brown, not pure black */
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.02 50);
+  /* Cards: Slightly warmer than background for depth */
+  --card: oklch(0.985 0.012 70);
+  --card-foreground: oklch(0.25 0.03 45);
 
-  /* Primary: Espresso brown */
-  --primary: oklch(0.35 0.05 50);
-  --primary-foreground: oklch(0.98 0.005 90);
+  /* Popovers: Crisp but warm */
+  --popover: oklch(0.99 0.01 75);
+  --popover-foreground: oklch(0.25 0.03 45);
 
-  /* Secondary: Warm crust orange */
-  --secondary: oklch(0.70 0.15 55);
-  --secondary-foreground: oklch(0.20 0.02 50);
+  /* Primary: Rich espresso/dark roast brown */
+  --primary: oklch(0.32 0.055 42);          /* Deep espresso with warmth */
+  --primary-foreground: oklch(0.98 0.01 75);
 
-  --muted: oklch(0.95 0.01 90);
-  --muted-foreground: oklch(0.50 0.02 50);
+  /* Secondary: Warm crust orange/amber */
+  --secondary: oklch(0.68 0.16 52);         /* Perfect golden-brown crust */
+  --secondary-foreground: oklch(0.15 0.02 45);
 
-  /* Accent: Golden honey */
-  --accent: oklch(0.80 0.18 85);
-  --accent-foreground: oklch(0.20 0.02 50);
+  /* Muted: Soft, warm neutrals */
+  --muted: oklch(0.93 0.02 70);             /* Warm off-white */
+  --muted-foreground: oklch(0.52 0.025 50);  /* Medium warm brown */
 
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.90 0.02 80);
-  --input: oklch(0.90 0.02 80);
-  --ring: oklch(0.60 0.12 55);
+  /* Accent: Honey gold highlights */
+  --accent: oklch(0.78 0.14 80);            /* Rich honey gold */
+  --accent-foreground: oklch(0.18 0.025 45);
 
-  /* Chart colors - bakery themed */
-  --chart-1: oklch(0.70 0.15 55);   /* Crust orange */
-  --chart-2: oklch(0.80 0.18 85);   /* Honey gold */
-  --chart-3: oklch(0.35 0.05 50);   /* Espresso */
-  --chart-4: oklch(0.65 0.10 140);  /* Sage green */
-  --chart-5: oklch(0.75 0.08 25);   /* Warm rose */
+  /* Destructive: Warm red (not cold pink) */
+  --destructive: oklch(0.58 0.20 25);
+  --destructive-foreground: oklch(0.98 0.01 75);
 
-  --sidebar: oklch(0.98 0.005 90);
-  --sidebar-foreground: oklch(0.20 0.02 50);
-  --sidebar-primary: oklch(0.35 0.05 50);
-  --sidebar-primary-foreground: oklch(0.98 0.005 90);
-  --sidebar-accent: oklch(0.95 0.02 85);
-  --sidebar-accent-foreground: oklch(0.20 0.02 50);
-  --sidebar-border: oklch(0.90 0.02 80);
-  --sidebar-ring: oklch(0.60 0.12 55);
+  /* Borders & Inputs: Subtle warm tones */
+  --border: oklch(0.88 0.025 68);
+  --input: oklch(0.88 0.025 68);
+  --ring: oklch(0.58 0.12 50);              /* Warm focus ring */
+
+  /* Chart colors - Premium bakery palette */
+  --chart-1: oklch(0.68 0.16 52);   /* Crust orange */
+  --chart-2: oklch(0.78 0.14 80);   /* Honey gold */
+  --chart-3: oklch(0.32 0.055 42);  /* Espresso */
+  --chart-4: oklch(0.62 0.08 135);  /* Warm sage */
+  --chart-5: oklch(0.72 0.10 22);   /* Dusty rose */
+
+  /* Sidebar: Matching the warm theme */
+  --sidebar: oklch(0.975 0.015 72);
+  --sidebar-foreground: oklch(0.25 0.03 45);
+  --sidebar-primary: oklch(0.32 0.055 42);
+  --sidebar-primary-foreground: oklch(0.98 0.01 75);
+  --sidebar-accent: oklch(0.93 0.025 75);
+  --sidebar-accent-foreground: oklch(0.25 0.03 45);
+  --sidebar-border: oklch(0.88 0.025 68);
+  --sidebar-ring: oklch(0.58 0.12 50);
 }
 
 .dark {
-  --background: oklch(0.18 0.02 50);   /* Dark espresso */
-  --foreground: oklch(0.95 0.005 90);  /* Cream */
+  /* Dark Mode: Warm evening bakery ambiance, not cold blue-gray */
 
-  --card: oklch(0.22 0.02 50);
-  --card-foreground: oklch(0.95 0.005 90);
+  /* Backgrounds: Dark roast with warmth */
+  --background: oklch(0.20 0.028 38);      /* Warm dark espresso, not cold gray */
+  --foreground: oklch(0.94 0.018 72);      /* Warm cream, not pure white */
 
-  --popover: oklch(0.22 0.02 50);
-  --popover-foreground: oklch(0.95 0.005 90);
+  /* Cards: Slightly lighter with warmth */
+  --card: oklch(0.24 0.025 42);
+  --card-foreground: oklch(0.94 0.018 72);
 
-  --primary: oklch(0.80 0.18 85);      /* Honey gold in dark mode */
-  --primary-foreground: oklch(0.18 0.02 50);
+  /* Popovers */
+  --popover: oklch(0.24 0.025 42);
+  --popover-foreground: oklch(0.94 0.018 72);
 
-  --secondary: oklch(0.30 0.03 50);
-  --secondary-foreground: oklch(0.95 0.005 90);
+  /* Primary: Honey gold shines in dark mode */
+  --primary: oklch(0.76 0.13 78);          /* Glowing honey gold */
+  --primary-foreground: oklch(0.18 0.028 40);
 
-  --muted: oklch(0.28 0.02 50);
-  --muted-foreground: oklch(0.70 0.02 80);
+  /* Secondary: Deep warm brown */
+  --secondary: oklch(0.32 0.038 45);
+  --secondary-foreground: oklch(0.94 0.018 72);
 
-  --accent: oklch(0.70 0.15 55);       /* Crust orange in dark mode */
-  --accent-foreground: oklch(0.95 0.005 90);
+  /* Muted: Warm mid-tones */
+  --muted: oklch(0.30 0.025 42);
+  --muted-foreground: oklch(0.68 0.022 65);
 
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.80 0.18 85);
+  /* Accent: Vibrant crust orange for highlights */
+  --accent: oklch(0.66 0.14 50);           /* Warm crust glow */
+  --accent-foreground: oklch(0.94 0.018 72);
 
-  --chart-1: oklch(0.75 0.16 55);
-  --chart-2: oklch(0.85 0.18 85);
-  --chart-3: oklch(0.70 0.08 50);
-  --chart-4: oklch(0.70 0.12 140);
-  --chart-5: oklch(0.78 0.10 25);
+  /* Destructive: Warm red */
+  --destructive: oklch(0.68 0.18 24);
+  --destructive-foreground: oklch(0.94 0.018 72);
 
-  --sidebar: oklch(0.20 0.02 50);
-  --sidebar-foreground: oklch(0.95 0.005 90);
-  --sidebar-primary: oklch(0.80 0.18 85);
-  --sidebar-primary-foreground: oklch(0.18 0.02 50);
-  --sidebar-accent: oklch(0.28 0.02 50);
-  --sidebar-accent-foreground: oklch(0.95 0.005 90);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.80 0.18 85);
+  /* Borders & Inputs: Subtle warm separation */
+  --border: oklch(0.35 0.03 45);
+  --input: oklch(0.35 0.03 45);
+  --ring: oklch(0.76 0.13 78);
+
+  /* Chart colors - Warm dark mode palette */
+  --chart-1: oklch(0.72 0.15 52);
+  --chart-2: oklch(0.80 0.14 80);
+  --chart-3: oklch(0.65 0.06 45);
+  --chart-4: oklch(0.68 0.10 135);
+  --chart-5: oklch(0.75 0.11 25);
+
+  /* Sidebar: Consistent warm dark theme */
+  --sidebar: oklch(0.22 0.028 40);
+  --sidebar-foreground: oklch(0.94 0.018 72);
+  --sidebar-primary: oklch(0.76 0.13 78);
+  --sidebar-primary-foreground: oklch(0.18 0.028 40);
+  --sidebar-accent: oklch(0.30 0.025 42);
+  --sidebar-accent-foreground: oklch(0.94 0.018 72);
+  --sidebar-border: oklch(0.35 0.03 45);
+  --sidebar-ring: oklch(0.76 0.13 78);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    /* Subtle paper/canvas texture for artisan feel */
+    background-image:
+      radial-gradient(circle at 20% 50%, oklch(0.97 0.02 75 / 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, oklch(0.97 0.02 60 / 0.2) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at 20% 50%, oklch(0.22 0.035 40 / 0.5) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, oklch(0.22 0.035 35 / 0.3) 0%, transparent 50%);
+  }
+
+  /* Typography System */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl;
+  }
+
+  h5 {
+    @apply text-lg md:text-xl;
+  }
+
+  h6 {
+    @apply text-base md:text-lg;
+  }
+
+  p {
+    line-height: 1.7;
+  }
+
+  /* Accent font utility */
+  .font-accent {
+    font-family: var(--font-accent);
+    font-weight: 300;
+    letter-spacing: 0.02em;
   }
 }
 
@@ -220,9 +325,20 @@
   @apply h-full bg-gradient-to-r from-secondary to-accent transition-all duration-500;
 }
 
-/* Hero Section */
+/* Hero Section - Enhanced with warmth */
 .hero-bakery {
   @apply bg-gradient-to-br from-background via-secondary/10 to-accent/10;
+  position: relative;
+}
+
+.hero-bakery::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 30% 40%, oklch(0.78 0.14 80 / 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 70% 70%, oklch(0.68 0.16 52 / 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 /* Cart Badge */
@@ -261,6 +377,309 @@
 @keyframes bounceSubtle {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+}
+
+/* Enhanced Animations & Micro-interactions */
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Staggered Animations for Product Grids */
+.animate-stagger > * {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.animate-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.animate-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.animate-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.animate-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* Loading Skeleton Pulse */
+.skeleton-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: linear-gradient(
+    90deg,
+    oklch(0.95 0.01 90) 0%,
+    oklch(0.80 0.18 85 / 0.15) 50%,
+    oklch(0.95 0.01 90) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Scroll Reveal Classes */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Smooth Transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transition-bounce {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover Lift Effect */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px oklch(0.25 0.03 45 / 0.15);
+}
+
+/* Button Press Effect */
+.btn-press {
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+/* Additional Keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Floating Animation for Decorative Elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Gentle Rotation for Icons */
+@keyframes rotateGentle {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate-gentle {
+  animation: rotateGentle 20s linear infinite;
+}
+
+/* Heartbeat for Special Elements */
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.1);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* ================================
+   Premium Bakery Enhancements
+   ================================ */
+
+/* Warm card with subtle border glow */
+.card-premium {
+  @apply bg-card border border-border/50 shadow-sm;
+  box-shadow:
+    0 1px 2px oklch(0.25 0.03 45 / 0.05),
+    0 0 0 1px oklch(0.78 0.14 80 / 0.03);
+}
+
+.card-premium:hover {
+  box-shadow:
+    0 4px 12px oklch(0.25 0.03 45 / 0.08),
+    0 0 0 1px oklch(0.78 0.14 80 / 0.08);
+}
+
+/* Warm glass effect for overlays */
+.glass-warm {
+  background: oklch(0.97 0.015 75 / 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass-warm {
+  background: oklch(0.20 0.028 38 / 0.8);
+}
+
+/* Text gradient for special headings */
+.text-gradient-warm {
+  background: linear-gradient(
+    135deg,
+    oklch(0.32 0.055 42),
+    oklch(0.68 0.16 52),
+    oklch(0.78 0.14 80)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Decorative divider */
+.divider-warm {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    oklch(0.78 0.14 80 / 0.5),
+    oklch(0.68 0.16 52 / 0.5),
+    oklch(0.78 0.14 80 / 0.5),
+    transparent
+  );
+}
+
+/* Premium button with enhanced hover */
+.btn-premium {
+  @apply relative overflow-hidden transition-all duration-300;
+  box-shadow:
+    0 2px 4px oklch(0.32 0.055 42 / 0.2),
+    inset 0 1px 0 oklch(1 0 0 / 0.1);
+}
+
+.btn-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.1),
+    transparent,
+    oklch(0 0 0 / 0.05)
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-premium:hover::before {
+  opacity: 1;
+}
+
+/* Warm shadow utilities */
+.shadow-warm-sm {
+  box-shadow: 0 1px 2px oklch(0.68 0.16 52 / 0.1);
+}
+
+.shadow-warm {
+  box-shadow: 0 4px 8px oklch(0.68 0.16 52 / 0.15);
+}
+
+.shadow-warm-lg {
+  box-shadow: 0 8px 16px oklch(0.68 0.16 52 / 0.2);
 }
 
 /* ================================
@@ -336,6 +755,26 @@ html {
 *:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+  transition: outline-offset 0.2s ease, outline-color 0.2s ease;
+}
+
+/* Enhanced focus states for buttons and links */
+button:focus-visible,
+a:focus-visible {
+  outline-width: 3px;
+  outline-offset: 3px;
+}
+
+/* Form focus-within for better UX */
+form:focus-within {
+  filter: drop-shadow(0 0 0 1px oklch(0.60 0.12 55 / 0.1));
+}
+
+/* Smooth transitions for all interactive elements */
+a, button, input, select, textarea {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 200ms;
 }
 
 /* ================================

@@ -100,21 +100,25 @@ export function AddressDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{address ? 'Edit Address' : 'Add New Address'}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-xl border-2 shadow-lg">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            {address ? 'Edit Address' : 'Add New Address'}
+          </DialogTitle>
+          <DialogDescription className="text-base">
             {address
               ? 'Update your delivery address details'
-              : 'Add a new delivery address for faster checkout'}
+              : 'Add a new delivery address for faster checkout on your next bakery order'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-4">
             {/* Label */}
             <div className="space-y-2">
-              <Label htmlFor="label">Label (Optional)</Label>
+              <Label htmlFor="label" className="text-sm font-semibold">
+                Label (Optional)
+              </Label>
               <Input
                 id="label"
                 placeholder="e.g., Home, Work, Mom's House"
@@ -122,12 +126,15 @@ export function AddressDialog({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, label: e.target.value }))
                 }
+                className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               />
             </div>
 
             {/* Street */}
             <div className="space-y-2">
-              <Label htmlFor="street">Street Address *</Label>
+              <Label htmlFor="street" className="text-sm font-semibold">
+                Street Address *
+              </Label>
               <Input
                 id="street"
                 required
@@ -136,12 +143,15 @@ export function AddressDialog({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, street: e.target.value }))
                 }
+                className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               />
             </div>
 
             {/* Apt/Suite */}
             <div className="space-y-2">
-              <Label htmlFor="apt">Apt/Suite/Unit (Optional)</Label>
+              <Label htmlFor="apt" className="text-sm font-semibold">
+                Apt/Suite/Unit (Optional)
+              </Label>
               <Input
                 id="apt"
                 placeholder="Apt 4B"
@@ -149,12 +159,15 @@ export function AddressDialog({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, apt: e.target.value }))
                 }
+                className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               />
             </div>
 
             {/* City */}
             <div className="space-y-2">
-              <Label htmlFor="city">City *</Label>
+              <Label htmlFor="city" className="text-sm font-semibold">
+                City *
+              </Label>
               <Input
                 id="city"
                 required
@@ -163,13 +176,16 @@ export function AddressDialog({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, city: e.target.value }))
                 }
+                className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               />
             </div>
 
             {/* State & ZIP */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="state">State *</Label>
+                <Label htmlFor="state" className="text-sm font-semibold">
+                  State *
+                </Label>
                 <Input
                   id="state"
                   required
@@ -179,10 +195,13 @@ export function AddressDialog({
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, state: e.target.value.toUpperCase() }))
                   }
+                  className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zip">ZIP Code *</Label>
+                <Label htmlFor="zip" className="text-sm font-semibold">
+                  ZIP Code *
+                </Label>
                 <Input
                   id="zip"
                   required
@@ -192,16 +211,19 @@ export function AddressDialog({
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, zip: e.target.value }))
                   }
+                  className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                 />
               </div>
             </div>
 
             {/* Delivery Instructions */}
             <div className="space-y-2">
-              <Label htmlFor="delivery_instructions">Delivery Instructions (Optional)</Label>
+              <Label htmlFor="delivery_instructions" className="text-sm font-semibold">
+                Delivery Instructions (Optional)
+              </Label>
               <Textarea
                 id="delivery_instructions"
-                placeholder="e.g., Leave at front door, Ring doorbell"
+                placeholder="e.g., Leave at front door, Ring doorbell, Gate code is 1234"
                 value={formData.delivery_instructions}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -210,17 +232,21 @@ export function AddressDialog({
                   }))
                 }
                 rows={3}
+                className="border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none"
               />
+              <p className="text-xs text-muted-foreground">
+                Help us deliver your fresh bread safely to your door
+              </p>
             </div>
 
             {/* Default Address Toggle */}
-            <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label htmlFor="is_default" className="cursor-pointer">
+            <div className="flex items-center justify-between space-x-2 rounded-xl border-2 p-4 bg-muted/20 hover:bg-muted/30 transition-colors duration-200">
+              <div className="space-y-1">
+                <Label htmlFor="is_default" className="cursor-pointer font-semibold">
                   Set as default address
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Use this address by default for deliveries
+                  Use this address by default for all deliveries
                 </p>
               </div>
               <Switch
@@ -233,17 +259,22 @@ export function AddressDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
+              className="border-2 hover:bg-muted/50 transition-all duration-200"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : address ? 'Update' : 'Add'} Address
+            <Button
+              type="submit"
+              disabled={loading}
+              className="shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              {loading ? 'Saving...' : address ? 'Update Address' : 'Add Address'}
             </Button>
           </DialogFooter>
         </form>

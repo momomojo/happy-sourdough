@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
@@ -9,120 +9,146 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      {/* Back Navigation */}
-      <div className="mb-8">
-        <Button asChild variant="ghost" size="sm" className="gap-2">
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </Button>
-      </div>
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Header */}
+      <section className="relative bg-gradient-to-br from-orange-50/50 to-amber-100/50 dark:from-stone-900 dark:to-stone-800 py-16 border-b border-primary/10">
+        <div className="container mx-auto px-4 max-w-4xl">
+          {/* Back Navigation */}
+          <div className="mb-8">
+            <Button asChild variant="ghost" size="sm" className="gap-2 hover:bg-primary/5">
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Link>
+            </Button>
+          </div>
 
-      {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-          Terms of Service
-        </h1>
-        <p className="text-muted-foreground">
-          Last Updated: December 8, 2025
-        </p>
-      </div>
+          {/* Header */}
+          <div className="flex items-start gap-6">
+            <div className="hidden md:block w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
+              <Scale className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                Terms of Service
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Last Updated: December 8, 2025
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      {/* Content */}
-      <div className="prose prose-neutral max-w-none">
-        <div className="space-y-8">
-          {/* Introduction */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              1. Introduction
-            </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Welcome to Happy Sourdough. These Terms of Service govern your use of our website and the purchase
-              of our artisan baked goods. By placing an order with Happy Sourdough, you agree to be bound by these terms.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Happy Sourdough is a local artisan bakery specializing in handcrafted sourdough breads, pastries,
-              and custom cakes. We take pride in using organic ingredients and traditional fermentation methods.
-            </p>
-          </section>
+      {/* Main Content */}
+      <section className="py-12 bg-background flex-1">
+        <div className="container mx-auto px-4 max-w-4xl">
 
-          {/* Ordering */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              2. Ordering Process
-            </h2>
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              2.1 Product Availability
-            </h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">
+        {/* Introductory Note */}
+        <div className="mb-8 p-6 rounded-xl bg-primary/5 border-l-4 border-primary">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            These terms govern your use of Happy Sourdough's services. We've tried to make them as clear and
+            straightforward as possible. If you have any questions, please don't hesitate to contact us.
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="prose prose-neutral max-w-none">
+          <div className="space-y-10">
+            {/* Introduction */}
+            <section className="bg-gradient-to-br from-background to-muted/20 rounded-2xl p-8 border border-primary/10">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">1</span>
+                Introduction
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-base">
+                Welcome to Happy Sourdough. These Terms of Service govern your use of our website and the purchase
+                of our artisan baked goods. By placing an order with Happy Sourdough, you agree to be bound by these terms.
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-base">
+                Happy Sourdough is a local artisan bakery specializing in handcrafted sourdough breads, pastries,
+                and custom cakes. We take pride in using organic ingredients and traditional fermentation methods.
+              </p>
+            </section>
+
+            {/* Ordering */}
+            <section className="border-l-2 border-primary/20 pl-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">2</span>
+                Ordering Process
+              </h2>
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 mt-6">
+                2.1 Product Availability
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-base">
               All products are subject to availability. We reserve the right to limit quantities or discontinue
               any product at our discretion. Product images are for illustration purposes and actual products may vary slightly.
             </p>
 
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              2.2 Order Acceptance
-            </h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 mt-6">
+                2.2 Order Acceptance
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-base">
               Your order constitutes an offer to purchase our products. We reserve the right to accept or decline
               your order for any reason, including but not limited to product availability, errors in pricing or
               product information, or delivery zone limitations.
             </p>
 
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              2.3 Order Confirmation
-            </h3>
-            <p className="text-muted-foreground leading-relaxed">
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 mt-6">
+                2.3 Order Confirmation
+              </h3>
+              <p className="text-muted-foreground leading-relaxed text-base">
               Once your order is placed, you will receive an email confirmation. This confirmation does not
               constitute acceptance of your order. Order acceptance occurs when we confirm your order and begin
               the baking process.
             </p>
           </section>
 
-          {/* Pricing and Payment */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              3. Pricing and Payment
-            </h2>
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              3.1 Pricing
-            </h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              All prices are listed in US Dollars and include applicable sales tax. Prices are subject to change
-              without notice, but changes will not affect orders already placed.
-            </p>
+            {/* Pricing and Payment */}
+            <section className="border-l-2 border-primary/20 pl-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">3</span>
+                Pricing and Payment
+              </h2>
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 mt-6">
+                3.1 Pricing
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-base">
+                All prices are listed in US Dollars and include applicable sales tax. Prices are subject to change
+                without notice, but changes will not affect orders already placed.
+              </p>
 
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              3.2 Payment Methods
-            </h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              We accept payment via credit card, debit card, and other payment methods processed through Stripe.
-              Payment is required at the time of order placement. Your payment information is processed securely
-              and we do not store your complete card details.
-            </p>
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 mt-6">
+                3.2 Payment Methods
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-base">
+                We accept payment via credit card, debit card, and other payment methods processed through Stripe.
+                Payment is required at the time of order placement. Your payment information is processed securely
+                and we do not store your complete card details.
+              </p>
 
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              3.3 Minimum Order Requirements
-            </h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Delivery orders are subject to minimum order requirements based on your delivery zone:
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4 mt-2">
-              <li>Zone 1 (0-3 miles): $25 minimum order</li>
-              <li>Zone 2 (3-7 miles): $40 minimum order</li>
-              <li>Zone 3 (7-12 miles): $60 minimum order</li>
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Pickup orders have no minimum requirement.
-            </p>
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 mt-6">
+                3.3 Minimum Order Requirements
+              </h3>
+              <p className="text-muted-foreground leading-relaxed text-base">
+                Delivery orders are subject to minimum order requirements based on your delivery zone:
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4 mt-3 text-base">
+                <li>Zone 1 (0-3 miles): $25 minimum order</li>
+                <li>Zone 2 (3-7 miles): $40 minimum order</li>
+                <li>Zone 3 (7-12 miles): $60 minimum order</li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed mt-4 text-base">
+                Pickup orders have no minimum requirement.
+              </p>
           </section>
 
-          {/* Delivery and Pickup */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              4. Delivery and Pickup
-            </h2>
+            {/* Delivery and Pickup */}
+            <section className="border-l-2 border-primary/20 pl-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">4</span>
+                Delivery and Pickup
+              </h2>
             <h3 className="text-xl font-semibold text-foreground mb-3">
               4.1 Delivery Zones and Fees
             </h3>
@@ -338,32 +364,47 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* Contact Information */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              14. Contact Information
-            </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              If you have questions about these Terms of Service, please contact us:
-            </p>
-            <div className="bg-muted/50 rounded-lg p-6 space-y-2">
-              <p className="text-foreground font-medium">Happy Sourdough</p>
-              <p className="text-muted-foreground">Email: hello@happysourdough.com</p>
-              <p className="text-muted-foreground">Phone: (555) 123-4567</p>
-            </div>
-          </section>
+            {/* Contact Information */}
+            <section className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-8 border border-primary/10">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">14</span>
+                Contact Information
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-6 text-base">
+                If you have questions about these Terms of Service, please contact us:
+              </p>
+              <div className="bg-background/60 rounded-xl p-6 space-y-3 border border-primary/10">
+                <p className="text-foreground font-semibold text-lg">Happy Sourdough</p>
+                <div className="space-y-2 text-base">
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-primary">Email:</span>
+                    <a href="mailto:hello@happysourdough.com" className="hover:text-primary hover:underline">
+                      hello@happysourdough.com
+                    </a>
+                  </p>
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-primary">Phone:</span>
+                    <a href="tel:+15551234567" className="hover:text-primary hover:underline">
+                      (555) 123-4567
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="mt-12 pt-8 border-t border-primary/10 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <Button asChild variant="outline" size="lg" className="rounded-full">
+            <Link href="/privacy">View Privacy Policy</Link>
+          </Button>
+          <Button asChild size="lg" className="rounded-full">
+            <Link href="/products">Start Shopping</Link>
+          </Button>
         </div>
       </div>
-
-      {/* Footer Navigation */}
-      <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <Button asChild variant="outline">
-          <Link href="/privacy">View Privacy Policy</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/products">Start Shopping</Link>
-        </Button>
-      </div>
+      </section>
     </div>
   );
 }

@@ -39,13 +39,13 @@ export function MarketingPreferences({ userId, initialOptIn }: MarketingPreferen
   };
 
   return (
-    <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-      <div className="space-y-0.5">
-        <Label htmlFor="marketing" className="cursor-pointer">
+    <div className="flex items-center justify-between space-x-4 rounded-xl border-2 p-5 bg-gradient-to-r from-accent/5 to-secondary/5 hover:from-accent/10 hover:to-secondary/10 transition-all duration-200">
+      <div className="space-y-1 flex-1">
+        <Label htmlFor="marketing" className="cursor-pointer font-semibold text-base">
           Receive marketing emails
         </Label>
-        <p className="text-xs text-muted-foreground">
-          Get updates about new products, special offers, and bakery news
+        <p className="text-sm text-muted-foreground">
+          Stay in the loop! Get updates about fresh-baked specials, seasonal offerings, and exclusive bakery news
         </p>
       </div>
       <Switch
@@ -53,6 +53,7 @@ export function MarketingPreferences({ userId, initialOptIn }: MarketingPreferen
         checked={optIn}
         onCheckedChange={handleToggle}
         disabled={loading}
+        className="data-[state=checked]:bg-primary"
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
@@ -9,51 +9,75 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      {/* Back Navigation */}
-      <div className="mb-8">
-        <Button asChild variant="ghost" size="sm" className="gap-2">
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </Button>
-      </div>
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Header */}
+      <section className="relative bg-gradient-to-br from-orange-50/50 to-amber-100/50 dark:from-stone-900 dark:to-stone-800 py-16 border-b border-primary/10">
+        <div className="container mx-auto px-4 max-w-4xl">
+          {/* Back Navigation */}
+          <div className="mb-8">
+            <Button asChild variant="ghost" size="sm" className="gap-2 hover:bg-primary/5">
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Link>
+            </Button>
+          </div>
 
-      {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-          Privacy Policy
-        </h1>
-        <p className="text-muted-foreground">
-          Last Updated: December 8, 2025
-        </p>
-      </div>
+          {/* Header */}
+          <div className="flex items-start gap-6">
+            <div className="hidden md:block w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
+              <Shield className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                Privacy Policy
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Last Updated: December 8, 2025
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      {/* Content */}
-      <div className="prose prose-neutral max-w-none">
-        <div className="space-y-8">
-          {/* Introduction */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              1. Introduction
-            </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              At Happy Sourdough, we respect your privacy and are committed to protecting your personal information.
-              This Privacy Policy explains how we collect, use, share, and safeguard your data when you use our
-              website and services.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              By using our website or placing an order, you consent to the data practices described in this policy.
-              If you do not agree with our practices, please do not use our services.
-            </p>
-          </section>
+      {/* Main Content */}
+      <section className="py-12 bg-background flex-1">
+        <div className="container mx-auto px-4 max-w-4xl">
 
-          {/* Information We Collect */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              2. Information We Collect
-            </h2>
+        {/* Introductory Note */}
+        <div className="mb-8 p-6 rounded-xl bg-primary/5 border-l-4 border-primary">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Your privacy matters to us. This policy explains how we collect, use, and protect your personal
+            information. We're committed to transparency and keeping your data secure.
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="prose prose-neutral max-w-none">
+          <div className="space-y-10">
+            {/* Introduction */}
+            <section className="bg-gradient-to-br from-background to-muted/20 rounded-2xl p-8 border border-primary/10">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">1</span>
+                Introduction
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-base">
+                At Happy Sourdough, we respect your privacy and are committed to protecting your personal information.
+                This Privacy Policy explains how we collect, use, share, and safeguard your data when you use our
+                website and services.
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-base">
+                By using our website or placing an order, you consent to the data practices described in this policy.
+                If you do not agree with our practices, please do not use our services.
+              </p>
+            </section>
+
+            {/* Information We Collect */}
+            <section className="border-l-2 border-primary/20 pl-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">2</span>
+                Information We Collect
+              </h2>
             <h3 className="text-xl font-semibold text-foreground mb-3">
               2.1 Information You Provide
             </h3>
@@ -357,22 +381,37 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          {/* Contact Information */}
-          <section>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              12. Contact Information
-            </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              If you have questions, concerns, or requests regarding this Privacy Policy or our data practices,
-              please contact us:
-            </p>
-            <div className="bg-muted/50 rounded-lg p-6 space-y-2">
-              <p className="text-foreground font-medium">Happy Sourdough - Privacy Team</p>
-              <p className="text-muted-foreground">Email: privacy@happysourdough.com</p>
-              <p className="text-muted-foreground">Phone: (555) 123-4567</p>
-              <p className="text-muted-foreground">Address: [Your Business Address]</p>
-            </div>
-          </section>
+            {/* Contact Information */}
+            <section className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-8 border border-primary/10">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">12</span>
+                Contact Information
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-6 text-base">
+                If you have questions, concerns, or requests regarding this Privacy Policy or our data practices,
+                please contact us:
+              </p>
+              <div className="bg-background/60 rounded-xl p-6 space-y-3 border border-primary/10">
+                <p className="text-foreground font-semibold text-lg">Happy Sourdough - Privacy Team</p>
+                <div className="space-y-2 text-base">
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-primary">Email:</span>
+                    <a href="mailto:privacy@happysourdough.com" className="hover:text-primary hover:underline">
+                      privacy@happysourdough.com
+                    </a>
+                  </p>
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-primary">Phone:</span>
+                    <a href="tel:+15551234567" className="hover:text-primary hover:underline">
+                      (555) 123-4567
+                    </a>
+                  </p>
+                  <p className="text-muted-foreground">
+                    <span className="text-primary">Address:</span> [Your Business Address]
+                  </p>
+                </div>
+              </div>
+            </section>
 
           {/* Third-Party Services */}
           <section>
@@ -398,18 +437,20 @@ export default function PrivacyPage() {
               where our service providers operate.
             </p>
           </section>
+          </div>
         </div>
-      </div>
 
-      {/* Footer Navigation */}
-      <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <Button asChild variant="outline">
-          <Link href="/terms">View Terms of Service</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/products">Start Shopping</Link>
-        </Button>
-      </div>
+        {/* Footer Navigation */}
+        <div className="mt-12 pt-8 border-t border-primary/10 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <Button asChild variant="outline" size="lg" className="rounded-full">
+            <Link href="/terms">View Terms of Service</Link>
+          </Button>
+          <Button asChild size="lg" className="rounded-full">
+            <Link href="/products">Start Shopping</Link>
+          </Button>
+        </div>
+        </div>
+      </section>
     </div>
   );
 }

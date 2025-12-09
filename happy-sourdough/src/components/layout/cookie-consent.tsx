@@ -56,39 +56,39 @@ export function CookieConsent() {
         isAnimating ? 'translate-y-0' : 'translate-y-full'
       )}
     >
-      <Card className="shadow-lg border-2 bg-background/95 backdrop-blur-sm">
-        <CardContent className="p-4 md:p-6 gap-0">
-          <div className="flex items-start justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl" aria-hidden="true">🍪</span>
-              <h3 className="font-semibold text-base">We use cookies</h3>
+      <Card className="shadow-2xl border-2 border-primary/20 bg-background/98 backdrop-blur-md">
+        <CardContent className="p-5 md:p-6 gap-0">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl transition-transform duration-200 hover:rotate-12" aria-hidden="true">🍪</span>
+              <h3 className="font-bold text-base text-foreground">We use cookies</h3>
             </div>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={() => handleConsent('essential')}
-              className="h-6 w-6 -mt-1 -mr-1"
+              className="h-7 w-7 -mt-1 -mr-1 hover:bg-accent/50"
               aria-label="Decline non-essential cookies"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5">
             We use cookies to enhance your browsing experience and analyze our traffic.
             Essential cookies are required for the site to function properly.{' '}
             <Link
               href="/privacy"
-              className="text-primary hover:underline font-medium"
+              className="text-primary hover:underline font-semibold underline-offset-2 hover:text-primary/80 transition-colors duration-200"
             >
               Learn more
             </Link>
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2.5">
             <Button
               onClick={() => handleConsent('all')}
-              className="flex-1 min-h-[44px]"
+              className="flex-1 min-h-[44px] shadow-md hover:shadow-lg"
             >
               Accept All
             </Button>

@@ -78,7 +78,7 @@ export function AddressList({ userId, initialAddresses }: AddressListProps) {
     <div>
       {/* Add Address Button */}
       <div className="mb-6">
-        <Button onClick={openAddDialog}>
+        <Button onClick={openAddDialog} size="lg" className="shadow-md hover:shadow-lg transition-all duration-200">
           <Plus className="mr-2 h-4 w-4" />
           Add New Address
         </Button>
@@ -86,56 +86,76 @@ export function AddressList({ userId, initialAddresses }: AddressListProps) {
 
       {/* Addresses Grid */}
       {addresses.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No saved addresses</h3>
-            <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
-              Add a delivery address to make checkout faster next time.
+        <Card className="border-2 shadow-md rounded-xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-secondary/5 pointer-events-none" />
+          <CardContent className="flex flex-col items-center justify-center py-16 relative">
+            <div className="p-4 rounded-full bg-accent/10 mb-6">
+              <MapPin className="h-12 w-12 text-accent-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No saved addresses</h3>
+            <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
+              Add a delivery address to make checkout faster and get your fresh bread delivered right to your door!
             </p>
-            <Button onClick={openAddDialog}>
+            <Button onClick={openAddDialog} size="lg" className="shadow-md">
               <Plus className="mr-2 h-4 w-4" />
-              Add Address
+              Add Your First Address
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {addresses.map((address) => (
-            <Card key={address.id} className={address.is_default ? 'border-primary' : ''}>
-              <CardHeader>
+            <Card
+              key={address.id}
+              className={`border-2 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden group ${
+                address.is_default ? 'border-primary/50 ring-2 ring-primary/20' : ''
+              }`}
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full -translate-y-12 translate-x-12 group-hover:scale-110 transition-transform duration-300" />
+              <CardHeader className="relative">
                 <div className="flex items-start justify-between">
-                  <CardTitle className="text-lg">
-                    {address.label || 'Address'}
-                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <MapPin className="h-4 w-4 text-primary" />
+                    </div>
+                    <CardTitle className="text-lg font-bold">
+                      {address.label || 'Address'}
+                    </CardTitle>
+                  </div>
                   {address.is_default && (
-                    <Badge variant="default" className="ml-2">
+                    <Badge
+                      variant="default"
+                      className="ml-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+                    >
                       <Check className="mr-1 h-3 w-3" />
                       Default
                     </Badge>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm">
-                  <p>{address.street}</p>
-                  {address.apt && <p>Apt/Suite: {address.apt}</p>}
-                  <p>
+              <CardContent className="space-y-5 relative">
+                <div className="text-sm space-y-2 p-4 rounded-lg bg-muted/30">
+                  <p className="font-medium text-foreground">{address.street}</p>
+                  {address.apt && (
+                    <p className="text-muted-foreground">Apt/Suite: {address.apt}</p>
+                  )}
+                  <p className="text-foreground">
                     {address.city}, {address.state} {address.zip}
                   </p>
                   {address.delivery_instructions && (
-                    <p className="mt-2 text-muted-foreground">
-                      Note: {address.delivery_instructions}
+                    <p className="mt-3 pt-3 border-t border-border/40 text-muted-foreground italic">
+                      Delivery note: {address.delivery_instructions}
                     </p>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-2">
                   {!address.is_default && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleSetDefault(address.id)}
+                      className="border-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200"
                     >
                       Set as Default
                     </Button>
@@ -144,6 +164,7 @@ export function AddressList({ userId, initialAddresses }: AddressListProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => openEditDialog(address)}
+                    className="border-2 hover:bg-secondary/5 hover:border-secondary/50 transition-all duration-200"
                   >
                     <Pencil className="mr-2 h-3 w-3" />
                     Edit
@@ -152,6 +173,7 @@ export function AddressList({ userId, initialAddresses }: AddressListProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteAddress(address.id)}
+                    className="border-2 hover:bg-destructive/5 hover:border-destructive/50 hover:text-destructive transition-all duration-200"
                   >
                     <Trash2 className="mr-2 h-3 w-3" />
                     Delete
