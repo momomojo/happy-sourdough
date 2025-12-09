@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Search, ShoppingCart, X } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -16,7 +16,7 @@ const navigationLinks = [
   { label: 'Home', href: '/' },
   { label: 'Products', href: '/products' },
   { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
+  { label: 'Track Order', href: '/track' },
 ];
 
 export function Header() {
@@ -93,6 +93,18 @@ export function Header() {
                 aria-label="Search"
               >
                 <Search className="h-5 w-5" />
+              </Button>
+
+              {/* Account Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                aria-label="My Account"
+              >
+                <Link href="/account">
+                  <User className="h-5 w-5" />
+                </Link>
               </Button>
 
               {/* Cart Button */}
