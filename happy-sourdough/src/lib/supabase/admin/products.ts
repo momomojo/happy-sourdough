@@ -5,6 +5,9 @@ export type ProductWithVariants = Product & {
   variants: ProductVariant[];
 };
 
+// Type for Supabase query result with variants relation
+type ProductQueryRow = Product & { variants: ProductVariant[] | null };
+
 /**
  * Get all products for admin (including unavailable)
  */
@@ -25,10 +28,11 @@ export async function getAdminProducts(): Promise<ProductWithVariants[]> {
   }
 
   return (data || []).map((item) => {
-    const { variants, ...product } = item as any;
+    const row = item as ProductQueryRow;
+    const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a: ProductVariant, b: ProductVariant) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
     } as ProductWithVariants;
   });
 }
@@ -53,10 +57,11 @@ export async function getProductById(id: string): Promise<ProductWithVariants | 
     return null;
   }
 
-  const { variants, ...product } = data as any;
+  const row = data as ProductQueryRow;
+  const { variants, ...product } = row;
   return {
     ...product,
-    variants: (variants || []).sort((a: ProductVariant, b: ProductVariant) => a.sort_order - b.sort_order),
+    variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
   } as ProductWithVariants;
 }
 

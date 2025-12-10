@@ -51,7 +51,7 @@ export async function PATCH(
     // Release time slot if order is cancelled and had a time slot
     if (status === 'cancelled' && orderBeforeUpdate?.time_slot_id) {
       const supabase = await createAdminClient();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Note: `as any` cast is required for Supabase SSR client RPC type inference
       const { error: releaseError } = await (supabase as any).rpc('decrement_slot_orders', {
         slot_id: orderBeforeUpdate.time_slot_id,
       });

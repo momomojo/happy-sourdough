@@ -5,6 +5,9 @@ export type ProductWithVariants = Product & {
   variants: ProductVariant[];
 };
 
+// Type for Supabase query result with variants relation
+type ProductQueryRow = Product & { variants: ProductVariant[] | null };
+
 /**
  * Fetch all products with their variants
  * @param category Optional category filter
@@ -35,10 +38,11 @@ export async function getProducts(category?: string): Promise<ProductWithVariant
 
   // Transform the data to match our type
   return (data || []).map((item) => {
-    const { variants, ...product } = item as any;
+    const row = item as ProductQueryRow;
+    const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a: ProductVariant, b: ProductVariant) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
     } as ProductWithVariants;
   });
 }
@@ -186,10 +190,11 @@ export async function searchProducts(query: string): Promise<ProductWithVariants
   }
 
   return (data || []).map((item) => {
-    const { variants, ...product } = item as any;
+    const row = item as ProductQueryRow;
+    const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a: ProductVariant, b: ProductVariant) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
     } as ProductWithVariants;
   });
 }
@@ -220,10 +225,11 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
   }
 
   return (data || []).map((item) => {
-    const { variants, ...product } = item as any;
+    const row = item as ProductQueryRow;
+    const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a: ProductVariant, b: ProductVariant) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
     } as ProductWithVariants;
   });
 }

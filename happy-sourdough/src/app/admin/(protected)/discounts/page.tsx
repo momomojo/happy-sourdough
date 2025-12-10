@@ -9,14 +9,16 @@ export default async function DiscountsPage() {
   const supabase = await createClient();
 
   // Fetch all discount codes
-  const { data: discountCodes, error } = await (supabase
-    .from('discount_codes') as any)
+  const { data, error } = await supabase
+    .from('discount_codes')
     .select('*')
-    .order('created_at', { ascending: false }) as { data: DiscountCode[] | null; error: unknown };
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching discount codes:', error);
   }
+
+  const discountCodes = (data || []) as DiscountCode[];
 
   return (
     <div className="space-y-6">
@@ -39,7 +41,7 @@ export default async function DiscountsPage() {
             <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{discountCodes?.length || 0}</div>
+            <div className="text-2xl font-bold">{discountCodes.length}</div>
             <p className="text-xs text-muted-foreground">
               All discount codes
             </p>
@@ -53,7 +55,7 @@ export default async function DiscountsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {discountCodes?.filter(code => code.is_active).length || 0}
+              {discountCodes.filter(code => code.is_active).length}
             </div>
             <p className="text-xs text-muted-foreground">
               Currently available
@@ -68,7 +70,7 @@ export default async function DiscountsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {discountCodes?.reduce((sum, code) => sum + code.current_uses, 0) || 0}
+              {discountCodes.reduce((sum, code) => sum + code.current_uses, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all codes
@@ -86,7 +88,7 @@ export default async function DiscountsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DiscountCodeList discountCodes={discountCodes || []} />
+          <DiscountCodeList discountCodes={discountCodes} />
         </CardContent>
       </Card>
     </div>

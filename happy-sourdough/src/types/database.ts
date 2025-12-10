@@ -335,6 +335,36 @@ export interface Database {
         Update: Partial<Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
+    Functions: {
+      decrement_slot_orders: {
+        Args: { slot_id: string };
+        Returns: void;
+      };
+      generate_order_number: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      get_admin_role: {
+        Args: { check_user_id?: string };
+        Returns: string;
+      };
+      get_business_setting: {
+        Args: { setting_key: string };
+        Returns: unknown;
+      };
+      increment_slot_orders: {
+        Args: { slot_id: string };
+        Returns: void;
+      };
+      is_admin: {
+        Args: { check_user_id?: string };
+        Returns: boolean;
+      };
+      update_business_setting: {
+        Args: { new_value: unknown; setting_key: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
       order_status: OrderStatus;
       fulfillment_type: FulfillmentType;

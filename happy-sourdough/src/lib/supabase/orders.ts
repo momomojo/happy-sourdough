@@ -17,8 +17,7 @@ export interface OrderWithDetails extends Order {
 export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDetails | null> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: orderData, error: orderError } = await (supabase as any)
+  const { data: orderData, error: orderError } = await supabase
     .from('orders')
     .select('*')
     .eq('order_number', orderNumber)
@@ -114,8 +113,7 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
 export async function getOrderById(orderId: string): Promise<OrderWithDetails | null> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: orderData, error: orderError } = await (supabase as any)
+  const { data: orderData, error: orderError } = await supabase
     .from('orders')
     .select('*')
     .eq('id', orderId)

@@ -166,7 +166,7 @@ export async function reserveTimeSlot(slotId: string): Promise<boolean> {
   }
 
   // Increment current_orders atomically using RPC
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Note: `as never` cast is required for Supabase SSR client type inference
   const { error } = await (supabase as any).rpc('increment_slot_orders', {
     slot_id: slotId,
   });
@@ -187,7 +187,7 @@ export async function releaseTimeSlot(slotId: string): Promise<boolean> {
   const supabase = createClient();
 
   // Decrement current_orders atomically using RPC
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Note: `as any` cast is required for Supabase SSR client type inference
   const { error } = await (supabase as any).rpc('decrement_slot_orders', {
     slot_id: slotId,
   });

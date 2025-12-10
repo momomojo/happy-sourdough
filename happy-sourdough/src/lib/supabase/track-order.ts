@@ -20,8 +20,7 @@ export async function trackOrderByNumberAndEmail(
 
   try {
     // First, try to find the order by order number
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: orderData, error: orderError } = await (supabase as any)
+    const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .select('*')
       .eq('order_number', orderNumber)

@@ -10,10 +10,10 @@ export async function updateCustomerProfile(
 ): Promise<CustomerProfile | null> {
   const supabase = createBrowserClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('customer_profiles')
-    .update(updates)
+    .update(updates as never)
     .eq('id', userId)
     .select()
     .single();
@@ -57,17 +57,16 @@ export async function addAddress(
 
   // If this is the default address, unset all other defaults first
   if (address.is_default) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
+    await supabase
       .from('customer_addresses')
-      .update({ is_default: false })
+      .update({ is_default: false } as never)
       .eq('user_id', address.user_id);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('customer_addresses')
-    .insert(address)
+    .insert(address as never)
     .select()
     .single();
 
@@ -91,17 +90,16 @@ export async function updateAddress(
 
   // If setting as default, unset all other defaults first
   if (updates.is_default) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
+    await supabase
       .from('customer_addresses')
-      .update({ is_default: false })
+      .update({ is_default: false } as never)
       .eq('user_id', userId);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('customer_addresses')
-    .update(updates)
+    .update(updates as never)
     .eq('id', id)
     .eq('user_id', userId)
     .select()

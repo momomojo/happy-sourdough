@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
 
     // Reserve the time slot if one was assigned
     if (timeSlotId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Note: `as any` cast is required for Supabase SSR client RPC type inference
       const { error: reserveError } = await (supabase as any).rpc('increment_slot_orders', {
         slot_id: timeSlotId,
       });
@@ -360,7 +360,6 @@ export async function POST(request: NextRequest) {
       console.error('Stripe checkout error:', stripeError);
       // Rollback: release time slot, delete order items and order
       if (timeSlotId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).rpc('decrement_slot_orders', { slot_id: timeSlotId });
       }
       await (supabase.from('order_items') as ReturnType<typeof supabase.from>).delete().eq('order_id', order.id);

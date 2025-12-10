@@ -78,10 +78,10 @@ export async function updateZone(
 ): Promise<DeliveryZone> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('delivery_zones')
-    .update(updates)
+    .update(updates as never)
     .eq('id', zoneId)
     .select()
     .single();
@@ -117,13 +117,13 @@ export async function createZone(
 ): Promise<DeliveryZone> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('delivery_zones')
     .insert({
       ...zoneData,
       is_active: zoneData.is_active ?? true,
-    })
+    } as never)
     .select()
     .single();
 
@@ -142,8 +142,7 @@ export async function createZone(
 export async function deleteZone(zoneId: string): Promise<void> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('delivery_zones')
     .delete()
     .eq('id', zoneId);
@@ -196,10 +195,10 @@ export async function generateTimeSlots(
   });
 
   // Insert all slots
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('time_slots')
-    .insert(slotsToCreate)
+    .insert(slotsToCreate as never)
     .select();
 
   if (error) {
@@ -244,10 +243,10 @@ export async function updateTimeSlot(
 ): Promise<TimeSlot> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // Note: `as never` cast is required for Supabase SSR client type inference
+  const { data, error } = await supabase
     .from('time_slots')
-    .update(updates)
+    .update(updates as never)
     .eq('id', slotId)
     .select()
     .single();
@@ -272,8 +271,7 @@ export async function deleteTimeSlotsForRange(
 ): Promise<number> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('time_slots')
     .delete()
     .gte('date', startDate)
