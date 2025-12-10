@@ -21,7 +21,7 @@ export function ProductCard({ product }: ProductCardProps) {
   }).format(minPrice);
 
   return (
-    <Link href={`/products/${product.slug}`} className="block h-full group">
+    <Link href={`/products/${product.slug}`} className="block h-full group" data-testid="product-card">
       <Card className="h-full overflow-hidden border-border/30 hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
         {/* Image */}
         <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-accent/10 to-secondary/10">
@@ -61,7 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <CardContent className="space-y-3">
           {/* Price */}
-          <div className="text-2xl font-bold text-primary group-hover:scale-105 transition-transform duration-200 origin-left">
+          <div className="text-2xl font-bold text-primary group-hover:scale-105 transition-transform duration-200 origin-left" data-testid="product-price">
             {product.variants.length > 1 && <span className="text-sm font-medium text-muted-foreground mr-1">from</span>}
             {formattedPrice}
           </div>

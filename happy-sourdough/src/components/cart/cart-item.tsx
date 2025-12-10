@@ -28,7 +28,7 @@ export function CartItem({ item }: CartItemProps) {
   const lineTotal = item.unitPrice * item.quantity;
 
   return (
-    <div className="flex gap-4 py-4 border-b border-border last:border-0">
+    <div className="flex gap-4 py-4 border-b border-border last:border-0" data-testid="cart-item">
       {/* Product Image */}
       <div className="relative size-20 shrink-0 rounded-md overflow-hidden bg-muted">
         {item.imageUrl ? (

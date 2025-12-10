@@ -1,16 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Search, ShoppingCart, User, Package } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, Package, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useCart } from '@/contexts/cart-context';
 import { CartSheet } from '@/components/cart/cart-sheet';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const navigationLinks = [
   { label: 'Home', href: '/' },
@@ -21,10 +32,68 @@ const navigationLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { itemCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [user, setUser] = useState<{ id: string; email: string; name?: string } | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+
+    // Subscribe to auth changes
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadUserProfile(session.user.id, session.user.email || '');
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const checkAuth = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      await loadUserProfile(user.id, user.email || '');
+    }
+    setIsLoadingAuth(false);
+  };
+
+  const loadUserProfile = async (userId: string, email: string) => {
+    const supabase = createClient();
+    interface CustomerProfile {
+      first_name: string | null;
+      last_name: string | null;
+    }
+    const { data: profile } = await (supabase
+      .from('customer_profiles') as ReturnType<typeof supabase.from>)
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single() as { data: CustomerProfile | null };
+
+    const name = profile?.first_name
+      ? `${profile.first_name} ${profile.last_name || ''}`.trim()
+      : undefined;
+
+    setUser({ id: userId, email, name });
+  };
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    toast.success('Logged out successfully');
+    router.push('/');
+  };
 
   return (
     <>
@@ -98,17 +167,76 @@ export function Header() {
                 <Search className="h-5 w-5" />
               </Button>
 
-              {/* Account Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                aria-label="My Account"
-              >
-                <Link href="/account">
-                  <User className="h-5 w-5" />
-                </Link>
-              </Button>
+              {/* Account Button/Menu */}
+              {!isLoadingAuth && (
+                <>
+                  {user ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Account menu"
+                        >
+                          <UserCircle className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>
+                          <div className="flex flex-col space-y-1">
+                            {user.name && <p className="text-sm font-medium">{user.name}</p>}
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/profile" className="cursor-pointer">
+                            <UserCircle className="mr-2 h-4 w-4" />
+                            My Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/profile?tab=orders" className="cursor-pointer">
+                            <Package className="mr-2 h-4 w-4" />
+                            My Orders
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Account menu"
+                        >
+                          <User className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/login" className="cursor-pointer">
+                            <User className="mr-2 h-4 w-4" />
+                            Login
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/register" className="cursor-pointer">
+                            <UserCircle className="mr-2 h-4 w-4" />
+                            Sign Up
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
+              )}
 
               {/* Cart Button */}
               <Button
@@ -117,12 +245,14 @@ export function Header() {
                 className="relative hover:bg-accent/80"
                 onClick={() => setCartOpen(true)}
                 aria-label={`Shopping cart with ${itemCount} items`}
+                data-testid="cart-button"
               >
                 <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
                   <Badge
                     variant="destructive"
                     className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-bounce-subtle bg-accent text-accent-foreground border-2 border-background shadow-lg"
+                    data-testid="cart-count"
                   >
                     {itemCount > 9 ? '9+' : itemCount}
                   </Badge>
@@ -175,6 +305,66 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+
+            {!isLoadingAuth && (
+              <>
+                <div className="border-t pt-4 mt-4">
+                  {user ? (
+                    <>
+                      <div className="px-4 py-2 mb-2">
+                        <p className="text-sm font-medium">{user.name || 'My Account'}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                      </div>
+                      <Link
+                        href="/account/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-md block text-muted-foreground"
+                      >
+                        <UserCircle className="inline h-4 w-4 mr-2" />
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/account/profile?tab=orders"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-md block text-muted-foreground"
+                      >
+                        <Package className="inline h-4 w-4 mr-2" />
+                        My Orders
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-md block text-destructive w-full text-left"
+                      >
+                        <LogOut className="inline h-4 w-4 mr-2" />
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/account/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-md block text-muted-foreground"
+                      >
+                        <User className="inline h-4 w-4 mr-2" />
+                        Login
+                      </Link>
+                      <Link
+                        href="/account/register"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-md block text-muted-foreground"
+                      >
+                        <UserCircle className="inline h-4 w-4 mr-2" />
+                        Sign Up
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </nav>
         </SheetContent>
       </Sheet>

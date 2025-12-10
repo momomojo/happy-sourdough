@@ -31,6 +31,7 @@ export function CartButton() {
         onClick={() => setIsOpen(true)}
         className="relative"
         aria-label={`Shopping cart with ${itemCount} items`}
+        data-testid="cart-button"
       >
         <ShoppingCartIcon className="size-5" />
         {itemCount > 0 && (
@@ -39,6 +40,7 @@ export function CartButton() {
             className={`absolute -top-2 -right-2 h-5 w-5 rounded-full bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center p-0 ${
               isAnimating ? 'animate-bounce-subtle' : ''
             }`}
+            data-testid="cart-count"
           >
             {itemCount > 99 ? '99+' : itemCount}
           </Badge>
