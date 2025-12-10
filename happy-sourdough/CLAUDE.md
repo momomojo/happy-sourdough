@@ -312,10 +312,11 @@ All critical schema mismatches have been resolved:
 ### Phase 5: Production Hardening (Current Focus)
 **Goal**: Ready for real traffic
 
-1. **Security Audit**
+1. **Security Audit** ✅ COMPLETE (2025-12-10)
    - ✅ RLS policies enabled on all tables
-   - ⏳ Input sanitization audit needed
-   - ⏳ Rate limiting on APIs
+   - ✅ API route authentication audit complete
+   - ✅ Development-only endpoints protected
+   - ⏳ Rate limiting on APIs (recommended for production)
 
 2. **Monitoring & Logging**
    - ⏳ Error tracking (Sentry or similar)
@@ -324,8 +325,8 @@ All critical schema mismatches have been resolved:
 
 3. **Code Quality**
    - ✅ Reduce `as any` casts (27→6 instances, remaining are necessary Supabase workarounds)
-   - ⏳ Add missing E2E tests (order tracking, email)
-   - ⏳ Admin test setup documentation
+   - ✅ Add order tracking E2E tests (14 pass, 3 skip)
+   - ⏳ Add email delivery tests (needs Jest/Vitest)
 
 ---
 
@@ -342,7 +343,7 @@ All critical schema mismatches have been resolved:
 | Checkout flow | `tests/e2e/checkout.spec.ts` | 9 pass | ✅ Working |
 | Admin dashboard | `tests/e2e/admin.spec.ts` | 3 pass, 19 skip | ✅ Working (skips require admin setup) |
 | Order tracking | `tests/e2e/order-tracking.spec.ts` | 14 pass, 3 skip | ✅ Working (skips require seeded orders) |
-| Email delivery | - | - | ⏳ Needs creation |
+| Email delivery | - | - | ⏳ Needs unit test setup (Jest/Vitest) |
 
 ### E2E Test Fixes Applied (2025-12-08)
 
@@ -382,9 +383,27 @@ Priority order for next steps:
 1. ~~**Admin Setup Documentation**~~ ✅ Complete - Admin dashboard fully tested and documented
 2. ~~**Reduce `as any` Casts**~~ ✅ Complete - Reduced from 27 to ~6 instances (remaining are necessary Supabase SSR workarounds)
 3. ~~**Order Tracking Tests**~~ ✅ Complete - 14 tests pass, 3 skipped (need seeded orders)
-4. **Email Delivery Tests** - Add tests for Resend email templates
-5. **Security Audit** - Input sanitization and rate limiting review
+4. ~~**Security Audit**~~ ✅ Complete - All critical issues fixed (see below)
+5. **Email Delivery Tests** - Requires unit test setup (Jest/Vitest) for template rendering, Resend mock
 6. **Monitoring Setup** - Configure error tracking (Sentry recommended)
+7. **Rate Limiting** - Add rate limiting middleware for API routes (optional for MVP)
+
+### Security Audit Results (2025-12-10) ✅
+
+| Route | Issue | Status | Fix Applied |
+|-------|-------|--------|-------------|
+| `/api/debug-db` | Exposed DB info without auth | ✅ Fixed | Development-only check, no stack traces |
+| `/api/seed-db` | Could seed data without auth | ✅ Fixed | Development-only check, no stack traces |
+| `/api/admin/production` | No admin auth | ✅ Fixed | Added `isAdmin()` check |
+| `/api/admin/orders/[id]/notes` | No admin auth | ✅ Fixed | Added `isAdmin()` check |
+| `/api/admin/orders/[id]/status` | No admin auth | ✅ Fixed | Added `isAdmin()` check |
+| `/api/admin/discounts` | Only checked user login | ✅ Fixed | Added `isAdmin()` check |
+| `/api/admin/discounts/[id]` | Only checked user login | ✅ Fixed | Added `isAdmin()` check |
+| `/api/webhooks/stripe` | N/A | ✅ Secure | Has signature verification |
+| `/api/admin/upload` | N/A | ✅ Secure | Has full admin verification |
+| `/api/admin/products/sync-stripe` | N/A | ✅ Secure | Has full admin verification |
+| `/api/checkout` | N/A | ✅ Secure | Validates inputs, handles rollback |
+| `/api/discounts/validate` | No rate limiting | ⏳ Low risk | Consider rate limiting for production |
 
 ### Database Status
 - **Tables**: 16 tables with RLS enabled

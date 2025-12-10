@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductionList, markItemComplete } from '@/lib/supabase/admin/production';
+import { isAdmin } from '@/lib/supabase/auth';
 
 /**
  * GET /api/admin/production?date=YYYY-MM-DD
@@ -7,6 +8,10 @@ import { getProductionList, markItemComplete } from '@/lib/supabase/admin/produc
  */
 export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Verify admin authentication
+    if (!await isAdmin()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const searchParams = request.nextUrl.searchParams;
     const date = searchParams.get('date');
 
@@ -44,6 +49,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Verify admin authentication
+    if (!await isAdmin()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { productId, variantId, date, completed } = body;
 

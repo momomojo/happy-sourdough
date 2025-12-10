@@ -1,10 +1,14 @@
-
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
+    // SECURITY: Only allow in development mode
+    if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
     const supabase = await createClient();
-    const results: any = {};
+    const results: Record<string, unknown> = {};
 
     try {
         // 1. Delivery Zones
@@ -71,7 +75,9 @@ export async function GET() {
 
         return NextResponse.json({ status: 'success', results });
 
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message, stack: error.stack }, { status: 500 });
+    } catch (error: unknown) {
+        // Don't expose stack traces
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

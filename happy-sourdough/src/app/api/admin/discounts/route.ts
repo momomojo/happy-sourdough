@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isAdmin } from '@/lib/supabase/auth';
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // SECURITY: Check if user is admin (verified against admin_users table)
+    if (!await isAdmin()) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // TODO: Add admin role check here if you have admin_users table
-    // For now, we'll allow any authenticated user to create discount codes
 
     const body = await request.json();
     const {

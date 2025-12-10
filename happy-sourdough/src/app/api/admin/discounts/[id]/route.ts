@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isAdmin } from '@/lib/supabase/auth';
 
 export async function PATCH(
   request: NextRequest,
@@ -9,9 +10,8 @@ export async function PATCH(
     const { id } = await params;
     const supabase = await createClient();
 
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // SECURITY: Check if user is admin (verified against admin_users table)
+    if (!await isAdmin()) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -53,9 +53,8 @@ export async function DELETE(
     const { id } = await params;
     const supabase = await createClient();
 
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // SECURITY: Check if user is admin (verified against admin_users table)
+    if (!await isAdmin()) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

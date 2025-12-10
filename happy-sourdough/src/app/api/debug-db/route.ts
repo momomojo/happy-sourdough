@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
+    // SECURITY: Only allow in development mode
+    if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
     try {
         const supabase = await createClient();
 
@@ -39,11 +44,12 @@ export async function GET() {
             }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        // Don't expose stack traces
+        const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({
             status: 'crash',
-            error: error.message,
-            stack: error.stack
+            error: message,
         }, { status: 500 });
     }
 }
