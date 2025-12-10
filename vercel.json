@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd happy-sourdough && npm run build",
-  "installCommand": "cd happy-sourdough && npm install",
-  "framework": "nextjs",
-  "outputDirectory": "happy-sourdough/.next"
-}
