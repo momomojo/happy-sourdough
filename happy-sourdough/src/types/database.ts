@@ -129,6 +129,7 @@ export interface Order {
   subtotal: number;
   delivery_fee: number;
   discount_amount: number;
+  discount_code_id: string | null;
   tax_amount: number;
   tip_amount: number;
   total: number;
@@ -224,6 +225,28 @@ export interface DiscountCode {
   created_at: string;
 }
 
+export type AdminRole = 'super_admin' | 'admin' | 'manager' | 'staff';
+
+export interface AdminUser {
+  id: string;
+  user_id: string;
+  email: string;
+  role: AdminRole;
+  full_name: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessSetting {
+  id: string;
+  key: string;
+  value: unknown;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Supabase Database type helper
 export interface Database {
   public: {
@@ -298,12 +321,23 @@ export interface Database {
         Insert: Omit<DiscountCode, 'id' | 'created_at'>;
         Update: Partial<Omit<DiscountCode, 'id' | 'created_at'>>;
       };
+      admin_users: {
+        Row: AdminUser;
+        Insert: Omit<AdminUser, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AdminUser, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      business_settings: {
+        Row: BusinessSetting;
+        Insert: Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>>;
+      };
     };
     Enums: {
       order_status: OrderStatus;
       fulfillment_type: FulfillmentType;
       product_category: ProductCategory;
       slot_type: SlotType;
+      admin_role: AdminRole;
     };
   };
 }

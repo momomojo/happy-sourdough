@@ -1,6 +1,10 @@
 import { createClient } from './server';
 import type { CustomerProfile, CustomerAddress, Order } from '@/types/database';
 
+export interface OrderWithItemCount extends Order {
+  item_count: number;
+}
+
 /**
  * Get customer profile for the authenticated user (Server Component)
  */
@@ -18,18 +22,23 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
     return null;
   }
 
-  return data as CustomerProfile;
+  return data;
 }
 
 /**
- * Get all orders for a user (Server Component)
+ * Get all orders for a user with item count (Server Component)
+ * Fixed: Uses single query with aggregation instead of N+1 queries
  */
-export async function getUserOrders(userId: string): Promise<Order[]> {
+export async function getUserOrders(userId: string): Promise<OrderWithItemCount[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  // Use a single query with aggregation to get orders and item counts
+  const { data: orders, error } = await supabase
     .from('orders')
-    .select('*')
+    .select(`
+      *,
+      order_items(id)
+    `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -38,7 +47,20 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
     return [];
   }
 
-  return (data || []) as Order[];
+  if (!orders || orders.length === 0) {
+    return [];
+  }
+
+  // Transform the data to include item count
+  const ordersWithCounts: OrderWithItemCount[] = orders.map((order) => {
+    const { order_items, ...orderData } = order as Order & { order_items: Array<{ id: string }> };
+    return {
+      ...orderData,
+      item_count: order_items?.length || 0,
+    };
+  });
+
+  return ordersWithCounts;
 }
 
 /**
@@ -59,5 +81,5 @@ export async function getUserAddresses(userId: string): Promise<CustomerAddress[
     return [];
   }
 
-  return (data || []) as CustomerAddress[];
+  return data || [];
 }

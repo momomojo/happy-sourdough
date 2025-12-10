@@ -1,13 +1,28 @@
 import { createClient } from './server';
 import { redirect } from 'next/navigation';
 
+export type AdminRole = 'super_admin' | 'admin' | 'manager' | 'staff';
+
 export interface User {
   id: string;
   email: string;
   role?: string;
+  adminRole?: AdminRole | null;
   user_metadata?: {
     full_name?: string;
+    first_name?: string;
+    last_name?: string;
   };
+}
+
+export interface AdminUser {
+  id: string;
+  user_id: string;
+  email: string;
+  role: AdminRole;
+  full_name: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 /**
@@ -35,35 +50,159 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 /**
- * Check if the current user has admin role
- * Checks both JWT claims and app_metadata
+ * Check if the current user has admin role in admin_users table
  */
 export async function isAdmin(): Promise<boolean> {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
 
-  if (!user) {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
     return false;
   }
 
-  // Check for admin role in user metadata
-  return user.role === 'admin';
+  // Check admin_users table
+  const { data: adminUser, error: adminError } = await supabase
+    .from('admin_users')
+    .select('role, is_active')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .single();
+
+  if (adminError || !adminUser) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Get admin role for current user
+ */
+export async function getAdminRole(): Promise<AdminRole | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  const { data: adminUser, error: adminError } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .single() as { data: { role: AdminRole } | null; error: unknown };
+
+  if (adminError || !adminUser) {
+    return null;
+  }
+
+  return adminUser.role;
+}
+
+/**
+ * Get admin user details
+ */
+export async function getAdminUser(): Promise<AdminUser | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  const { data: adminUser, error: adminError } = await supabase
+    .from('admin_users')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .single();
+
+  if (adminError || !adminUser) {
+    return null;
+  }
+
+  return adminUser as AdminUser;
+}
+
+/**
+ * Check if any admin users exist (for first-time setup)
+ */
+export async function hasAdminUsers(): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('admin_users')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+
+  if (error) {
+    console.error('Error checking admin users:', error);
+    return true; // Assume admins exist to be safe
+  }
+
+  return (count ?? 0) > 0;
 }
 
 /**
  * Require admin authentication - redirects to login if not admin
  * Use in Server Components to protect admin routes
  */
-export async function requireAdmin(): Promise<User> {
-  const user = await getCurrentUser();
+export async function requireAdmin(): Promise<User & { adminRole: AdminRole }> {
+  const supabase = await createClient();
 
-  if (!user) {
-    redirect('/login');
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    redirect('/admin/login');
   }
 
-  const adminCheck = await isAdmin();
+  // Check admin_users table
+  const { data: adminUser, error: adminError } = await supabase
+    .from('admin_users')
+    .select('role, is_active')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .single() as { data: { role: AdminRole; is_active: boolean } | null; error: unknown };
 
-  if (!adminCheck) {
+  if (adminError || !adminUser) {
     redirect('/'); // Redirect non-admins to homepage
+  }
+
+  return {
+    id: user.id,
+    email: user.email!,
+    role: adminUser.role,
+    adminRole: adminUser.role,
+    user_metadata: user.user_metadata,
+  };
+}
+
+/**
+ * Require specific admin role level
+ */
+export async function requireAdminRole(
+  allowedRoles: AdminRole[]
+): Promise<User & { adminRole: AdminRole }> {
+  const user = await requireAdmin();
+
+  if (!allowedRoles.includes(user.adminRole)) {
+    redirect('/admin/dashboard'); // Redirect to dashboard if insufficient permissions
   }
 
   return user;
@@ -78,13 +217,13 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Sign in with email and password
+ * Sign in admin with email and password
  * Returns user on success, null on failure
  */
-export async function signInWithPassword(
+export async function signInAdmin(
   email: string,
   password: string
-): Promise<{ user: User | null; error: string | null }> {
+): Promise<{ user: (User & { adminRole: AdminRole }) | null; error: string | null }> {
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -100,9 +239,15 @@ export async function signInWithPassword(
     return { user: null, error: 'Authentication failed' };
   }
 
-  // Check if user is admin
-  const role = data.user.app_metadata?.role;
-  if (role !== 'admin') {
+  // Check admin_users table
+  const { data: adminUser, error: adminError } = await supabase
+    .from('admin_users')
+    .select('role, is_active')
+    .eq('user_id', data.user.id)
+    .eq('is_active', true)
+    .single() as { data: { role: AdminRole; is_active: boolean } | null; error: unknown };
+
+  if (adminError || !adminUser) {
     // Sign out non-admin users
     await supabase.auth.signOut();
     return { user: null, error: 'Unauthorized: Admin access required' };
@@ -112,7 +257,7 @@ export async function signInWithPassword(
     user: {
       id: data.user.id,
       email: data.user.email!,
-      role: role,
+      adminRole: adminUser.role,
       user_metadata: data.user.user_metadata,
     },
     error: null,
