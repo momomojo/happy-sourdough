@@ -10,7 +10,8 @@ import {
   UtensilsCrossed,
   MapPin,
   Menu,
-  X,
+  Settings,
+  Percent,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -38,9 +39,19 @@ const navigation = [
     icon: UtensilsCrossed,
   },
   {
+    name: 'Discounts',
+    href: '/admin/discounts',
+    icon: Percent,
+  },
+  {
     name: 'Zones',
     href: '/admin/zones',
     icon: MapPin,
+  },
+  {
+    name: 'Settings',
+    href: '/admin/settings',
+    icon: Settings,
   },
 ];
 
@@ -51,8 +62,8 @@ function SidebarContent() {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <UtensilsCrossed className="h-6 w-6 text-primary" />
+        <Link href="/admin/dashboard" className="flex items-center gap-3">
+          <img src="/icon.svg" alt="Happy Sourdough" className="h-8 w-8" />
           <span className="text-lg font-bold">Happy Sourdough</span>
         </Link>
       </div>

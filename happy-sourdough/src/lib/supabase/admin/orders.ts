@@ -95,24 +95,37 @@ export async function getOrders(
   const userMap = new Map<string, { email?: string; firstName?: string; lastName?: string; phone?: string }>();
 
   if (userIds.length > 0) {
-    const { data: authUsers } = await supabase.auth.admin.listUsers();
-    authUsers.users.forEach(user => {
-      userMap.set(user.id, { email: user.email });
+    // Fetch only the users we need (fixed: was fetching ALL users)
+    const userPromises = userIds.map(id =>
+      supabase.auth.admin.getUserById(id)
+    );
+    const userResults = await Promise.all(userPromises);
+
+    userResults.forEach(({ data: userResponse }) => {
+      if (userResponse?.user) {
+        userMap.set(userResponse.user.id, { email: userResponse.user.email });
+      }
     });
 
     // Get profiles
-    const { data: profiles } = await supabase
-      .from('customer_profiles')
+    interface CustomerProfile {
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      phone: string | null;
+    }
+    const { data: profiles } = await (supabase
+      .from('customer_profiles') as ReturnType<typeof supabase.from>)
       .select('id, first_name, last_name, phone')
-      .in('id', userIds);
+      .in('id', userIds) as { data: CustomerProfile[] | null };
 
-    profiles?.forEach((profile: Record<string, unknown>) => {
-      const existing = userMap.get(profile.id as string) || {};
-      userMap.set(profile.id as string, {
+    profiles?.forEach((profile) => {
+      const existing = userMap.get(profile.id) || {};
+      userMap.set(profile.id, {
         ...existing,
-        firstName: profile.first_name as string,
-        lastName: profile.last_name as string,
-        phone: profile.phone as string,
+        firstName: profile.first_name || undefined,
+        lastName: profile.last_name || undefined,
+        phone: profile.phone || undefined,
       });
     });
   }
@@ -149,6 +162,7 @@ export async function getOrders(
       subtotal: order.subtotal as number,
       delivery_fee: order.delivery_fee as number,
       discount_amount: order.discount_amount as number,
+      discount_code_id: order.discount_code_id as string | null,
       tax_amount: order.tax_amount as number,
       tip_amount: order.tip_amount as number,
       total: order.total as number,
@@ -198,7 +212,7 @@ export async function updateOrderStatus(
   // Update order status
   const { error: updateError } = await supabase
     .from('orders')
-    .update(updateData)
+    .update(updateData as never)
     .eq('id', orderId);
 
   if (updateError) {
@@ -214,7 +228,7 @@ export async function updateOrderStatus(
       status: newStatus,
       notes: notes || null,
       changed_by: adminUserId || null,
-    });
+    } as never);
 
   if (historyError) {
     console.error('Error adding status history:', historyError);
@@ -292,7 +306,7 @@ export async function getOrderById(orderId: string): Promise<OrderWithCustomer |
       order_items(id)
     `)
     .eq('id', orderId)
-    .single();
+    .single() as { data: (Order & { order_items: { id: string }[] }) | null; error: unknown };
 
   if (error || !order) {
     console.error('Error fetching order:', error);
@@ -310,11 +324,16 @@ export async function getOrderById(orderId: string): Promise<OrderWithCustomer |
       customerEmail = authUser.user.email;
     }
 
-    const { data: profile } = await supabase
-      .from('customer_profiles')
+    interface ProfileData {
+      first_name: string | null;
+      last_name: string | null;
+      phone: string | null;
+    }
+    const { data: profile } = await (supabase
+      .from('customer_profiles') as ReturnType<typeof supabase.from>)
       .select('first_name, last_name, phone')
       .eq('id', order.user_id)
-      .single();
+      .single() as { data: ProfileData | null };
 
     if (profile) {
       customerName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Customer';
@@ -339,6 +358,7 @@ export async function getOrderById(orderId: string): Promise<OrderWithCustomer |
     subtotal: order.subtotal,
     delivery_fee: order.delivery_fee,
     discount_amount: order.discount_amount,
+    discount_code_id: order.discount_code_id,
     tax_amount: order.tax_amount,
     tip_amount: order.tip_amount,
     total: order.total,

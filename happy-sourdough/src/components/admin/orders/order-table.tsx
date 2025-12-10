@@ -152,7 +152,7 @@ export function OrderTable({ orders }: OrderTableProps) {
               <TableRow key={order.id} className="hover:bg-muted/50">
                 <TableCell className="font-medium">
                   <Link
-                    href={`/orders/${order.id}`}
+                    href={`/admin/orders/${order.id}`}
                     className="text-primary hover:underline"
                   >
                     {order.order_number}

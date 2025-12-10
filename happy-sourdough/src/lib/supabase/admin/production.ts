@@ -3,7 +3,7 @@ import { createClient } from '../client';
 export interface ProductionItem {
   product_id: string;
   product_name: string;
-  variant_id: string | null;
+  product_variant_id: string | null;
   variant_name: string | null;
   category: string;
   quantity: number;
@@ -77,14 +77,14 @@ export async function getProductionList(date: string): Promise<ProductionListDat
     .from('order_items')
     .select(`
       product_id,
-      variant_id,
+      product_variant_id,
       quantity,
       order_id,
       products:product_id (
         name,
         category
       ),
-      product_variants:variant_id (
+      product_variants:product_variant_id (
         name
       )
     `)
@@ -102,7 +102,7 @@ export async function getProductionList(date: string): Promise<ProductionListDat
     const productName = item.products?.name || 'Unknown Product';
     const variantName = item.product_variants?.name || null;
     const category = item.products?.category || 'Other';
-    const key = `${item.product_id}-${item.variant_id || 'none'}`;
+    const key = `${item.product_id}-${item.product_variant_id || 'none'}`;
 
     if (itemsMap.has(key)) {
       const existing = itemsMap.get(key)!;
@@ -112,7 +112,7 @@ export async function getProductionList(date: string): Promise<ProductionListDat
       itemsMap.set(key, {
         product_id: item.product_id,
         product_name: productName,
-        variant_id: item.variant_id,
+        product_variant_id: item.product_variant_id,
         variant_name: variantName,
         category,
         quantity: item.quantity,

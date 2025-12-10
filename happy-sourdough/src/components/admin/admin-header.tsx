@@ -14,11 +14,19 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import type { User as AuthUser } from '@/lib/supabase/auth';
+import type { User as AuthUser, AdminRole } from '@/lib/supabase/auth';
+import { Badge } from '@/components/ui/badge';
 
 interface AdminHeaderProps {
-  user: AuthUser;
+  user: AuthUser & { adminRole?: AdminRole };
 }
+
+const ROLE_LABELS: Record<AdminRole, string> = {
+  super_admin: 'Super Admin',
+  admin: 'Admin',
+  manager: 'Manager',
+  staff: 'Staff',
+};
 
 export function AdminHeader({ user }: AdminHeaderProps) {
   const router = useRouter();
@@ -79,6 +87,11 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 <p className="text-xs text-muted-foreground">
                   {user.email}
                 </p>
+                {user.adminRole && (
+                  <Badge variant="secondary" className="w-fit text-xs mt-1">
+                    {ROLE_LABELS[user.adminRole]}
+                  </Badge>
+                )}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

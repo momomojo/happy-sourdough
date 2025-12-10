@@ -34,7 +34,7 @@ export function ProductionList({ items, date }: ProductionListProps) {
     .sort((a, b) => b.totalQuantity - a.totalQuantity);
 
   const handleToggleComplete = async (item: ProductionItem) => {
-    const key = `${item.product_id}-${item.variant_id || 'none'}`;
+    const key = `${item.product_id}-${item.product_variant_id || 'none'}`;
     const newCompleted = new Set(completedItems);
 
     if (newCompleted.has(key)) {
@@ -52,7 +52,7 @@ export function ProductionList({ items, date }: ProductionListProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: item.product_id,
-          variantId: item.variant_id,
+          variantId: item.product_variant_id,
           date,
           completed: !completedItems.has(key),
         }),
@@ -63,7 +63,7 @@ export function ProductionList({ items, date }: ProductionListProps) {
   };
 
   const isItemCompleted = (item: ProductionItem) => {
-    const key = `${item.product_id}-${item.variant_id || 'none'}`;
+    const key = `${item.product_id}-${item.product_variant_id || 'none'}`;
     return completedItems.has(key);
   };
 
@@ -84,7 +84,7 @@ export function ProductionList({ items, date }: ProductionListProps) {
           <CardContent>
             <div className="space-y-3">
               {categoryItems.map((item, index) => {
-                const itemKey = `${item.product_id}-${item.variant_id || 'none'}`;
+                const itemKey = `${item.product_id}-${item.product_variant_id || 'none'}`;
                 const isCompleted = isItemCompleted(item);
 
                 return (
