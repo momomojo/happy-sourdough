@@ -117,6 +117,19 @@ export const SAMPLE_PRODUCTS: TestProduct[] = [
 ];
 
 /**
+ * Test order data for order tracking tests
+ * Note: These orders must be seeded in the database for tracking tests to work
+ */
+export const TEST_ORDERS = {
+  // Placeholder for seeded test order
+  // Uncomment and update when test orders are seeded
+  // validOrder: {
+  //   orderNumber: 'HS-2024-001',
+  //   email: 'test@happysourdough.com',
+  // },
+};
+
+/**
  * Order status values from the database schema
  */
 export const ORDER_STATUSES = [

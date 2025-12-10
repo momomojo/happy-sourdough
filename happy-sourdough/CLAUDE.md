@@ -259,7 +259,7 @@ All critical schema mismatches have been resolved:
 - **Time slot reservation**: Called during checkout with rollback support
 
 ### Remaining Code Quality Items
-- 27 instances of `as any` type casting (most are Supabase client workarounds)
+- ~6 instances of `as any`/`as never` type casting (all are necessary Supabase SSR client workarounds for RPC calls)
 - Hardcoded 8% tax rate (configurable via business_settings table)
 - ZIP-to-zone mapping via delivery_zones table (3 zones seeded)
 - Email send failures don't block order completion (by design)
@@ -323,7 +323,7 @@ All critical schema mismatches have been resolved:
    - ⏳ Performance metrics
 
 3. **Code Quality**
-   - ⏳ Reduce `as any` casts (27 instances)
+   - ✅ Reduce `as any` casts (27→6 instances, remaining are necessary Supabase workarounds)
    - ⏳ Add missing E2E tests (order tracking, email)
    - ⏳ Admin test setup documentation
 
@@ -333,7 +333,7 @@ All critical schema mismatches have been resolved:
 
 ### E2E Test Status (Last Updated: 2025-12-10)
 
-**Result: 31 passed, 20 skipped on chromium** ✅
+**Result: 45 passed, 23 skipped on chromium** ✅
 
 | Suite | File | Tests | Status |
 |-------|------|-------|--------|
@@ -341,7 +341,7 @@ All critical schema mismatches have been resolved:
 | Cart operations | `tests/e2e/cart.spec.ts` | 10 pass | ✅ Working |
 | Checkout flow | `tests/e2e/checkout.spec.ts` | 9 pass | ✅ Working |
 | Admin dashboard | `tests/e2e/admin.spec.ts` | 3 pass, 19 skip | ✅ Working (skips require admin setup) |
-| Order tracking | - | - | ⏳ Needs creation |
+| Order tracking | `tests/e2e/order-tracking.spec.ts` | 14 pass, 3 skip | ✅ Working (skips require seeded orders) |
 | Email delivery | - | - | ⏳ Needs creation |
 
 ### E2E Test Fixes Applied (2025-12-08)
@@ -380,8 +380,8 @@ Before merging any feature:
 
 Priority order for next steps:
 1. ~~**Admin Setup Documentation**~~ ✅ Complete - Admin dashboard fully tested and documented
-2. **Reduce `as any` Casts** - Replace 27 instances with proper Supabase typing patterns
-3. **Order Tracking Tests** - Add E2E tests for `/track` page functionality
+2. ~~**Reduce `as any` Casts**~~ ✅ Complete - Reduced from 27 to ~6 instances (remaining are necessary Supabase SSR workarounds)
+3. ~~**Order Tracking Tests**~~ ✅ Complete - 14 tests pass, 3 skipped (need seeded orders)
 4. **Email Delivery Tests** - Add tests for Resend email templates
 5. **Security Audit** - Input sanitization and rate limiting review
 6. **Monitoring Setup** - Configure error tracking (Sentry recommended)
