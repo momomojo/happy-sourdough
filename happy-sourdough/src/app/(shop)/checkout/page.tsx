@@ -7,6 +7,12 @@ import { Separator } from '@/components/ui/separator';
 
 export default function CheckoutPage() {
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [discountData, setDiscountData] = useState<{
+    discountCodeId: string;
+    code: string;
+    discountAmount: number;
+    discountType: string;
+  } | null>(null);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -23,13 +29,19 @@ export default function CheckoutPage() {
         {/* Order Summary - Show first on mobile */}
         <div className="lg:col-span-1 lg:order-2">
           <div className="lg:sticky lg:top-20">
-            <OrderSummary deliveryFee={deliveryFee} />
+            <OrderSummary
+              deliveryFee={deliveryFee}
+              onDiscountApplied={setDiscountData}
+            />
           </div>
         </div>
 
         {/* Main Checkout Form */}
         <div className="lg:col-span-2 lg:order-1">
-          <CheckoutForm onDeliveryFeeChange={setDeliveryFee} />
+          <CheckoutForm
+            onDeliveryFeeChange={setDeliveryFee}
+            discountData={discountData}
+          />
         </div>
       </div>
     </div>
