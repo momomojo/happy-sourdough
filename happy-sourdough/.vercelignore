@@ -1,0 +1,22 @@
+# Dependencies - Vercel installs these
+node_modules
+
+# Build output - Vercel builds this
+.next
+
+# Testing artifacts
+/coverage
+/test-results
+/playwright-report
+/playwright/.cache
+*.test.ts
+*.spec.ts
+tests/
+
+# IDE
+.idea
+.vscode
+
+# Misc
+.DS_Store
+*.log
