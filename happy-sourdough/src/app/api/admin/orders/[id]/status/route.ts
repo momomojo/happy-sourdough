@@ -42,8 +42,26 @@ export async function PATCH(
       );
     }
 
+    // Get order details before update (we need time_slot_id for release)
+    const orderBeforeUpdate = await getOrderById(id);
+
     // Update order status
     await updateOrderStatus(id, status, notes);
+
+    // Release time slot if order is cancelled and had a time slot
+    if (status === 'cancelled' && orderBeforeUpdate?.time_slot_id) {
+      const supabase = await createAdminClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: releaseError } = await (supabase as any).rpc('decrement_slot_orders', {
+        slot_id: orderBeforeUpdate.time_slot_id,
+      });
+      if (releaseError) {
+        console.error('Error releasing time slot:', releaseError);
+        // Don't fail the cancellation if slot release fails
+      } else {
+        console.log(`Time slot ${orderBeforeUpdate.time_slot_id} released for cancelled order ${id}`);
+      }
+    }
 
     // Send email notification
     try {
@@ -58,8 +76,8 @@ export async function PATCH(
           const supabase = await createAdminClient();
 
           // Get order items for the email
-          const { data: orderItems } = await supabase
-            .from('order_items')
+          const { data: orderItems } = await (supabase
+            .from('order_items') as ReturnType<typeof supabase.from>)
             .select(`
               quantity,
               product_name,
@@ -76,8 +94,8 @@ export async function PATCH(
           // Get time slot if available
           let timeSlot;
           if (order.time_slot_id) {
-            const { data: slot } = await supabase
-              .from('time_slots')
+            const { data: slot } = await (supabase
+              .from('time_slots') as ReturnType<typeof supabase.from>)
               .select('date, window_start, window_end')
               .eq('id', order.time_slot_id)
               .single();

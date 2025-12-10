@@ -9,6 +9,8 @@ interface CheckoutRequestBody extends CheckoutFormData {
   items: CartItem[];
   subtotal: number;
   deliveryFee: number;
+  discountCodeId?: string | null;
+  discountAmount?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -18,6 +20,8 @@ export async function POST(request: NextRequest) {
       items,
       subtotal,
       deliveryFee,
+      discountCodeId,
+      discountAmount = 0,
       email,
       fullName,
       phone,
@@ -63,8 +67,8 @@ export async function POST(request: NextRequest) {
 
     // Verify products exist and are available
     const variantIds = items.map(item => item.variantId);
-    const { data: variantsData, error: variantsError } = await supabase
-      .from('product_variants')
+    const { data: variantsData, error: variantsError } = await (supabase
+      .from('product_variants') as ReturnType<typeof supabase.from>)
       .select('id, product_id, price_adjustment, is_available')
       .in('id', variantIds);
 
@@ -76,7 +80,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const variants = variantsData;
+    const variants = variantsData as Array<{
+      id: string;
+      product_id: string;
+      price_adjustment: number;
+      is_available: boolean;
+    }> | null;
 
     // Validate all items are available
     const unavailableItems: string[] = [];
@@ -103,17 +112,17 @@ export async function POST(request: NextRequest) {
     // Calculate totals
     const TAX_RATE = 0.08; // TODO: Make configurable
     const taxAmount = subtotal * TAX_RATE;
-    const total = subtotal + deliveryFee + taxAmount;
+    const total = subtotal + deliveryFee + taxAmount - discountAmount;
 
     // Determine delivery zone from ZIP code
     let deliveryZoneId: string | null = null;
     if (fulfillmentType === 'delivery' && deliveryAddress) {
-      const { data: zoneData } = await supabase
-        .from('delivery_zones')
+      const { data: zoneData } = await (supabase
+        .from('delivery_zones') as ReturnType<typeof supabase.from>)
         .select('id')
         .contains('zip_codes', [deliveryAddress.zip])
         .eq('is_active', true)
-        .single();
+        .single() as { data: { id: string } | null };
 
       if (zoneData) {
         deliveryZoneId = zoneData.id;
@@ -131,13 +140,13 @@ export async function POST(request: NextRequest) {
       // but the seed data shows '10:00' format. 
       // Let's try to match both date and window_start.
 
-      const { data: slotData, error: slotError } = await supabase
-        .from('time_slots')
+      const { data: slotData, error: slotError } = await (supabase
+        .from('time_slots') as ReturnType<typeof supabase.from>)
         .select('id, current_orders, max_orders')
         .eq('date', deliveryDate)
         .eq('window_start', windowStart)
         .eq('is_available', true)
-        .single();
+        .single() as { data: { id: string; current_orders: number; max_orders: number } | null; error: unknown };
 
       if (slotData) {
         if (slotData.current_orders >= slotData.max_orders) {
@@ -165,7 +174,7 @@ export async function POST(request: NextRequest) {
 
     // Create order in database
     type OrderInsert = Omit<Order, 'id' | 'order_number' | 'created_at' | 'updated_at'>;
-    const orderInsert: OrderInsert = {
+    const orderInsert: OrderInsert & { discount_code_id?: string | null } = {
       user_id: userId,
       guest_email: userId ? null : email,
       guest_phone: userId ? null : phone,
@@ -179,7 +188,8 @@ export async function POST(request: NextRequest) {
       pickup_location: fulfillmentType === 'pickup' ? 'Main Bakery' : null,
       subtotal,
       delivery_fee: deliveryFee,
-      discount_amount: 0,
+      discount_amount: discountAmount,
+      discount_code_id: discountCodeId || null,
       tax_amount: taxAmount,
       tip_amount: 0,
       total,
@@ -192,13 +202,13 @@ export async function POST(request: NextRequest) {
       completed_at: null,
     };
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert(orderInsert)
+    const { data: order, error: orderError } = await (supabase
+      .from('orders') as ReturnType<typeof supabase.from>)
+      .insert(orderInsert as never)
       .select()
-      .single();
+      .single() as { data: Order | null; error: unknown };
 
-    if (orderError) {
+    if (orderError || !order) {
       console.error('Error creating order:', orderError);
       return NextResponse.json(
         { error: 'Failed to create order' },
@@ -220,18 +230,77 @@ export async function POST(request: NextRequest) {
       special_instructions: null,
     }));
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
+    const { error: itemsError } = await (supabase
+      .from('order_items') as ReturnType<typeof supabase.from>)
+      .insert(orderItems as never);
 
     if (itemsError) {
       console.error('Error creating order items:', itemsError);
       // Rollback order creation
-      await supabase.from('orders').delete().eq('id', order.id);
+      await (supabase.from('orders') as ReturnType<typeof supabase.from>).delete().eq('id', order.id);
       return NextResponse.json(
         { error: 'Failed to create order items' },
         { status: 500 }
       );
+    }
+
+    // Reserve the time slot if one was assigned
+    if (timeSlotId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: reserveError } = await (supabase as any).rpc('increment_slot_orders', {
+        slot_id: timeSlotId,
+      });
+
+      if (reserveError) {
+        console.error('Error reserving time slot:', reserveError);
+        // Rollback: delete order items and order
+        await (supabase.from('order_items') as ReturnType<typeof supabase.from>).delete().eq('order_id', order.id);
+        await (supabase.from('orders') as ReturnType<typeof supabase.from>).delete().eq('id', order.id);
+        return NextResponse.json(
+          { error: 'Failed to reserve time slot. Please try again.' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Save delivery address for authenticated users
+    if (userId && fulfillmentType === 'delivery' && deliveryAddress) {
+      // Check if this exact address already exists
+      const { data: existingAddress } = await (supabase
+        .from('customer_addresses') as ReturnType<typeof supabase.from>)
+        .select('id')
+        .eq('user_id', userId)
+        .eq('street', deliveryAddress.street)
+        .eq('city', deliveryAddress.city)
+        .eq('state', deliveryAddress.state)
+        .eq('zip', deliveryAddress.zip)
+        .maybeSingle();
+
+      // Only save if address doesn't already exist
+      if (!existingAddress) {
+        // Check if user has any addresses to determine if this should be default
+        const { data: userAddresses } = await (supabase
+          .from('customer_addresses') as ReturnType<typeof supabase.from>)
+          .select('id')
+          .eq('user_id', userId);
+
+        const isFirstAddress = !userAddresses || (userAddresses as unknown[]).length === 0;
+
+        await (supabase
+          .from('customer_addresses') as ReturnType<typeof supabase.from>)
+          .insert({
+            user_id: userId,
+            label: 'Recent Order',
+            street: deliveryAddress.street,
+            apt: deliveryAddress.apt || null,
+            city: deliveryAddress.city,
+            state: deliveryAddress.state,
+            zip: deliveryAddress.zip,
+            delivery_instructions: deliveryInstructions || null,
+            is_default: isFirstAddress,
+          });
+        // Ignore errors - address saving is optional
+      }
     }
 
     // Create Stripe checkout session
@@ -278,18 +347,34 @@ export async function POST(request: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    const session = await createCheckoutSession({
-      orderId: order.id,
-      lineItems,
-      customerEmail: email,
-      successUrl: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
-      cancelUrl: `${appUrl}/checkout?cancelled=true`,
-    });
+    let session;
+    try {
+      session = await createCheckoutSession({
+        orderId: order.id,
+        lineItems,
+        customerEmail: email,
+        successUrl: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
+        cancelUrl: `${appUrl}/checkout?cancelled=true`,
+      });
+    } catch (stripeError) {
+      console.error('Stripe checkout error:', stripeError);
+      // Rollback: release time slot, delete order items and order
+      if (timeSlotId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).rpc('decrement_slot_orders', { slot_id: timeSlotId });
+      }
+      await (supabase.from('order_items') as ReturnType<typeof supabase.from>).delete().eq('order_id', order.id);
+      await (supabase.from('orders') as ReturnType<typeof supabase.from>).delete().eq('id', order.id);
+      return NextResponse.json(
+        { error: 'Failed to create payment session. Please try again.' },
+        { status: 500 }
+      );
+    }
 
     // Update order with Stripe session ID
-    await supabase
-      .from('orders')
-      .update({ stripe_checkout_session_id: session.id })
+    await (supabase
+      .from('orders') as ReturnType<typeof supabase.from>)
+      .update({ stripe_checkout_session_id: session.id } as never)
       .eq('id', order.id);
 
     // Return checkout session URL

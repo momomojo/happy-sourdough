@@ -14,7 +14,7 @@ export async function GET() {
             { name: 'Zone 3', description: '7-12 miles from bakery', zip_codes: ['90217', '90218', '90219', '90220', '90221'], min_order: 60.00, delivery_fee: 10.00, free_delivery_threshold: 100.00, estimated_time_minutes: 60, sort_order: 3 }
         ];
         // Upsert zones based on name to avoid duplicates
-        const { data: zData, error: zError } = await supabase.from('delivery_zones').upsert(zones, { onConflict: 'name' }).select();
+        const { data: zData, error: zError } = await supabase.from('delivery_zones').upsert(zones as never, { onConflict: 'name' }).select() as { data: { id: string; name: string }[] | null; error: unknown };
         results.zones = { count: zData?.length, error: zError };
 
         // 2. Products
@@ -28,7 +28,7 @@ export async function GET() {
         ];
 
         // Upsert products
-        const { data: pData, error: pError } = await supabase.from('products').upsert(products, { onConflict: 'slug' }).select();
+        const { data: pData, error: pError } = await supabase.from('products').upsert(products as never, { onConflict: 'slug' }).select() as { data: { id: string; slug: string }[] | null; error: unknown };
         results.products = { count: pData?.length, error: pError };
 
         // 3. Variants (Need product IDs)
@@ -49,7 +49,7 @@ export async function GET() {
             if (variants.length > 0) {
                 // Cannot easily upsert variants without unique key other than ID, but assuming clean slate or just insert
                 // Using delete then insert for variants to avoid duplicates if possible, or just insert
-                const { error: vError } = await supabase.from('product_variants').insert(variants);
+                const { error: vError } = await supabase.from('product_variants').insert(variants as never);
                 results.variants = { error: vError };
             }
         }
@@ -66,8 +66,8 @@ export async function GET() {
             slots.push({ date: dateStr, window_start: '10:00', window_end: '12:00', slot_type: 'both', max_orders: 12 });
             slots.push({ date: dateStr, window_start: '14:00', window_end: '16:00', slot_type: 'both', max_orders: 12 });
         }
-        const { count: sCount, error: sError } = await supabase.from('time_slots').insert(slots).select();
-        results.slots = { count: sCount, error: sError };
+        const { data: sData, error: sError } = await supabase.from('time_slots').insert(slots as never).select() as { data: unknown[] | null; error: unknown };
+        results.slots = { count: sData?.length, error: sError };
 
         return NextResponse.json({ status: 'success', results });
 

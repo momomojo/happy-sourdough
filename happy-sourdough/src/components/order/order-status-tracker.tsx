@@ -29,18 +29,28 @@ const PICKUP_STEPS: StatusStep[] = [
   { status: 'baking', label: 'Baking', icon: ChefHat, description: 'Fresh from the oven' },
   { status: 'quality_check', label: 'Quality Check', icon: ClipboardCheck, description: 'Ensuring perfection' },
   { status: 'ready', label: 'Ready for Pickup', icon: Package, description: 'Ready when you are' },
-  { status: 'delivered', label: 'Picked Up', icon: Home, description: 'Enjoy your treats!' },
+  { status: 'picked_up', label: 'Picked Up', icon: Home, description: 'Enjoy your treats!' },
 ];
 
-const DECORATING_STEPS: StatusStep[] = [
+const DECORATING_STEPS_DELIVERY: StatusStep[] = [
   { status: 'received', label: 'Order Received', icon: Clock, description: 'We received your order' },
   { status: 'confirmed', label: 'Confirmed', icon: CheckCircle2, description: 'Payment confirmed' },
   { status: 'baking', label: 'Baking', icon: ChefHat, description: 'Fresh from the oven' },
   { status: 'decorating', label: 'Decorating', icon: Sparkles, description: 'Adding finishing touches' },
   { status: 'quality_check', label: 'Quality Check', icon: ClipboardCheck, description: 'Ensuring perfection' },
-  { status: 'ready', label: 'Ready', icon: Package, description: 'Ready for you' },
+  { status: 'ready', label: 'Ready', icon: Package, description: 'Ready for delivery' },
   { status: 'out_for_delivery', label: 'Out for Delivery', icon: Bike, description: 'On the way to you' },
   { status: 'delivered', label: 'Delivered', icon: Home, description: 'Enjoy your treats!' },
+];
+
+const DECORATING_STEPS_PICKUP: StatusStep[] = [
+  { status: 'received', label: 'Order Received', icon: Clock, description: 'We received your order' },
+  { status: 'confirmed', label: 'Confirmed', icon: CheckCircle2, description: 'Payment confirmed' },
+  { status: 'baking', label: 'Baking', icon: ChefHat, description: 'Fresh from the oven' },
+  { status: 'decorating', label: 'Decorating', icon: Sparkles, description: 'Adding finishing touches' },
+  { status: 'quality_check', label: 'Quality Check', icon: ClipboardCheck, description: 'Ensuring perfection' },
+  { status: 'ready', label: 'Ready for Pickup', icon: Package, description: 'Ready when you are' },
+  { status: 'picked_up', label: 'Picked Up', icon: Home, description: 'Enjoy your treats!' },
 ];
 
 interface OrderStatusTrackerProps {
@@ -91,9 +101,7 @@ export function OrderStatusTracker({
   // Select the appropriate workflow
   let steps: StatusStep[];
   if (hasDecorating) {
-    steps = deliveryType === 'pickup'
-      ? DECORATING_STEPS.filter(s => s.status !== 'out_for_delivery')
-      : DECORATING_STEPS;
+    steps = deliveryType === 'pickup' ? DECORATING_STEPS_PICKUP : DECORATING_STEPS_DELIVERY;
   } else {
     steps = deliveryType === 'pickup' ? PICKUP_STEPS : DELIVERY_STEPS;
   }

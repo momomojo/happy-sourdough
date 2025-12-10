@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,7 @@ import { CHECKOUT_STEPS, type CheckoutFormData } from '@/types/checkout';
 import { Check, ChevronLeft, ChevronRight, Loader2, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 
 // Validation schema
 const checkoutSchema = z.object({
@@ -38,9 +39,15 @@ const checkoutSchema = z.object({
 
 interface CheckoutFormProps {
   onDeliveryFeeChange?: (fee: number) => void;
+  discountData?: {
+    discountCodeId: string;
+    code: string;
+    discountAmount: number;
+    discountType: string;
+  } | null;
 }
 
-export function CheckoutForm({ onDeliveryFeeChange }: CheckoutFormProps) {
+export function CheckoutForm({ onDeliveryFeeChange, discountData }: CheckoutFormProps) {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(0);
@@ -73,6 +80,77 @@ export function CheckoutForm({ onDeliveryFeeChange }: CheckoutFormProps) {
       specialInstructions: '',
     },
   });
+
+  // Load user profile data on mount
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    // Load customer profile
+    interface CustomerProfile {
+      first_name: string | null;
+      last_name: string | null;
+      phone: string | null;
+    }
+    const { data: profile } = await (supabase
+      .from('customer_profiles') as ReturnType<typeof supabase.from>)
+      .select('*')
+      .eq('id', user.id)
+      .single() as { data: CustomerProfile | null };
+
+    // Load default address
+    interface CustomerAddress {
+      street: string;
+      apt: string | null;
+      city: string;
+      state: string;
+      zip: string;
+      delivery_instructions: string | null;
+    }
+    const { data: defaultAddress } = await (supabase
+      .from('customer_addresses') as ReturnType<typeof supabase.from>)
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_default', true)
+      .single() as { data: CustomerAddress | null };
+
+    // Pre-fill form with user data
+    if (user.email) {
+      form.setValue('email', user.email);
+    }
+
+    if (profile) {
+      const fullName = [profile.first_name, profile.last_name]
+        .filter(Boolean)
+        .join(' ');
+      if (fullName) {
+        form.setValue('fullName', fullName);
+      }
+      if (profile.phone) {
+        form.setValue('phone', profile.phone);
+      }
+    }
+
+    // Pre-fill default address
+    if (defaultAddress) {
+      form.setValue('deliveryAddress', {
+        street: defaultAddress.street,
+        apt: defaultAddress.apt || '',
+        city: defaultAddress.city,
+        state: defaultAddress.state,
+        zip: defaultAddress.zip,
+      });
+      if (defaultAddress.delivery_instructions) {
+        form.setValue('deliveryInstructions', defaultAddress.delivery_instructions);
+      }
+    }
+  };
 
   const currentStepId = CHECKOUT_STEPS[currentStep].id;
 
@@ -141,6 +219,8 @@ export function CheckoutForm({ onDeliveryFeeChange }: CheckoutFormProps) {
           items,
           subtotal,
           deliveryFee,
+          discountCodeId: discountData?.discountCodeId || null,
+          discountAmount: discountData?.discountAmount || 0,
         }),
       });
 
