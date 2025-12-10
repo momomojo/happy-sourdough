@@ -25,6 +25,7 @@ Happy Sourdough is a local artisan bakery e-commerce platform built with Next.js
 - **Styling**: Tailwind CSS v4 + shadcn/ui
 - **Hosting**: Vercel
 - **Email**: Resend (transactional emails)
+- **Monitoring**: Sentry (error tracking, session replay, performance)
 
 ## Available Skills (Happy Sourdough Plugin)
 
@@ -137,6 +138,9 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Sentry (Error Monitoring)
+NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
 ```
 
 ## MCP Servers Available
@@ -318,10 +322,11 @@ All critical schema mismatches have been resolved:
    - ✅ Development-only endpoints protected
    - ⏳ Rate limiting on APIs (recommended for production)
 
-2. **Monitoring & Logging**
-   - ⏳ Error tracking (Sentry or similar)
-   - ⏳ Webhook delivery monitoring
-   - ⏳ Performance metrics
+2. **Monitoring & Logging** ✅ COMPLETE (2025-12-10)
+   - ✅ Error tracking (Sentry integration with session replay)
+   - ✅ Performance tracing enabled
+   - ✅ Global error boundary for App Router
+   - ⏳ Webhook delivery monitoring (manual via Stripe dashboard)
 
 3. **Code Quality**
    - ✅ Reduce `as any` casts (27→6 instances, remaining are necessary Supabase workarounds)
