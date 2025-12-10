@@ -15,7 +15,7 @@ export default async function AccountPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    redirect('/login?redirect=/account');
+    redirect('/account/login?redirect=/account');
   }
 
   // Get customer profile
