@@ -1,0 +1,11 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sourdough loaf icon with smile scoring -->
+  <ellipse cx="24" cy="26" rx="20" ry="16" fill="#D4A574"/>
+  <ellipse cx="24" cy="24" rx="18" ry="13" fill="#C4956A"/>
+  <ellipse cx="24" cy="23" rx="14" ry="10" fill="#E8D5B7"/>
+  <!-- Smile scoring -->
+  <path d="M16 20 Q24 28 32 20" stroke="#C4956A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <circle cx="18" cy="18" r="2" fill="#C4956A"/>
+  <circle cx="30" cy="18" r="2" fill="#C4956A"/>
+</svg>
