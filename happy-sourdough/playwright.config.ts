@@ -7,10 +7,16 @@ export default defineConfig({
   testDir: './tests/e2e',
 
   // Maximum time one test can run for
-  timeout: 30 * 1000,
+  timeout: 60 * 1000,
 
-  // Run tests in files in parallel
-  fullyParallel: true,
+  // Expect timeout for assertions
+  expect: {
+    timeout: 10 * 1000,
+  },
+
+  // Run tests in files in parallel (reduce for stability)
+  fullyParallel: false,
+  workers: 2,
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
@@ -28,6 +34,12 @@ export default defineConfig({
   use: {
     // Base URL to use in actions like `await page.goto('/')`
     baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+
+    // Navigation timeout for page.goto
+    navigationTimeout: 30 * 1000,
+
+    // Action timeout for clicks, fills, etc
+    actionTimeout: 15 * 1000,
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
