@@ -15,8 +15,8 @@ public/images/
 ├── products/
 │   ├── breads/             (4 images)
 │   ├── pastries/           (4 images)
-│   ├── cakes/              (empty - placeholder)
-│   └── cookies/            (empty - placeholder)
+│   ├── cakes/              (2 images)
+│   ├── cookies/            (2 images)
 ├── categories/             (4 images)
 ├── lifestyle/              (8 images)
 ├── ui/                     (6 images)
@@ -54,6 +54,18 @@ public/images/
 | `o1xxk3o1xxk3o1xx.png` | `almond-croissant.png` | Almond croissant with sugar | 6.2 MB |
 | `mxvtzomxvtzomxvt.png` | `pain-au-chocolat.png` | Pain au chocolat cut | 6.2 MB |
 | `sydhw5sydhw5sydh.png` | `cinnamon-roll.png` | Cinnamon roll with glaze | 6.0 MB |
+
+### Products - Cakes (2 images)
+| Original Filename | New Filename | Purpose | Size |
+|-------------------|--------------|---------|------|
+| `generated` | `sourdough-birthday-cake.png` | Sourdough birthday cake | - |
+| `generated` | `chocolate-sourdough-cake.png` | Chocolate sourdough cake | - |
+
+### Products - Cookies (2 images)
+| Original Filename | New Filename | Purpose | Size |
+|-------------------|--------------|---------|------|
+| `generated` | `sourdough-chocolate-chip-cookies.png` | Chocolate chip cookies | - |
+| `generated` | `sourdough-snickerdoodle-cookies.png` | Snickerdoodle cookies | - |
 
 ### Category Headers (4 images)
 | Original Filename | New Filename | Purpose | Size |

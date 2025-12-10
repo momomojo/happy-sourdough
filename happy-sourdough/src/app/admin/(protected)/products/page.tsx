@@ -50,9 +50,9 @@ import { toast } from 'sonner';
 import type { ProductCategory } from '@/types/database';
 import {
   getAdminProducts,
-  createProduct,
-  updateProduct,
-  deleteProduct,
+  createProductWithStripeSync,
+  updateProductWithStripeSync,
+  deleteProductWithStripeArchive,
   toggleProductAvailability,
   toggleProductFeatured,
   createVariant,
@@ -210,26 +210,35 @@ export default function ProductsPage() {
     try {
       setSaving(true);
       if (editingProduct) {
-        await updateProduct(editingProduct.id, {
-          name: productForm.name,
-          slug: productForm.slug,
-          description: productForm.description || null,
-          category: productForm.category,
-          base_price: productForm.base_price,
-          image_url: productForm.image_url || null,
-          is_available: productForm.is_available,
-          is_featured: productForm.is_featured,
-          lead_time_hours: productForm.lead_time_hours,
-        });
+        await updateProductWithStripeSync(
+          editingProduct.id,
+          {
+            name: productForm.name,
+            slug: productForm.slug,
+            description: productForm.description || null,
+            category: productForm.category,
+            base_price: productForm.base_price,
+            image_url: productForm.image_url || null,
+            gallery_urls: productForm.gallery_urls,
+            is_available: productForm.is_available,
+            is_featured: productForm.is_featured,
+            lead_time_hours: productForm.lead_time_hours,
+          },
+          {
+            stripeProductId: editingProduct.stripe_product_id,
+            stripePriceId: editingProduct.stripe_price_id,
+          }
+        );
         toast.success('Product updated successfully');
       } else {
-        await createProduct({
+        await createProductWithStripeSync({
           name: productForm.name,
           slug: productForm.slug,
           description: productForm.description,
           category: productForm.category,
           base_price: productForm.base_price,
           image_url: productForm.image_url || undefined,
+          gallery_urls: productForm.gallery_urls,
           is_available: productForm.is_available,
           is_featured: productForm.is_featured,
           lead_time_hours: productForm.lead_time_hours,
@@ -251,7 +260,10 @@ export default function ProductsPage() {
 
     try {
       setSaving(true);
-      await deleteProduct(deletingProduct.id);
+      await deleteProductWithStripeArchive(
+        deletingProduct.id,
+        deletingProduct.stripe_product_id
+      );
       toast.success('Product deleted successfully');
       setDeleteDialogOpen(false);
       setDeletingProduct(null);
@@ -716,33 +728,39 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  value={productForm.image_url}
-                  onChange={(e) =>
-                    setProductForm({ ...productForm, image_url: e.target.value })
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lead_time">Lead Time (hours)</Label>
-                <Input
-                  id="lead_time"
-                  type="number"
-                  min="0"
-                  value={productForm.lead_time_hours}
-                  onChange={(e) =>
-                    setProductForm({
-                      ...productForm,
-                      lead_time_hours: parseInt(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="lead_time">Lead Time (hours)</Label>
+              <Input
+                id="lead_time"
+                type="number"
+                min="0"
+                value={productForm.lead_time_hours}
+                onChange={(e) =>
+                  setProductForm({
+                    ...productForm,
+                    lead_time_hours: parseInt(e.target.value) || 0,
+                  })
+                }
+              />
+            </div>
+
+            {/* Product Images */}
+            <div className="space-y-2 pt-4 border-t">
+              <Label>Product Images</Label>
+              <ProductImageManager
+                initialData={{
+                  imageUrl: productForm.image_url || null,
+                  galleryUrls: productForm.gallery_urls || [],
+                }}
+                onChange={(data) => {
+                  setProductForm({
+                    ...productForm,
+                    image_url: data.imageUrl || '',
+                    gallery_urls: data.galleryUrls,
+                  });
+                }}
+                disabled={saving}
+              />
             </div>
 
             <div className="flex items-center gap-6 pt-4">

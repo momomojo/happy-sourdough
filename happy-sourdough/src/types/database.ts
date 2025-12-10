@@ -43,6 +43,8 @@ export interface Product {
   image_url: string | null;
   gallery_urls: string[];
   sort_order: number;
+  stripe_product_id: string | null;
+  stripe_price_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +61,7 @@ export interface ProductVariant {
   is_available: boolean;
   is_default: boolean;
   sort_order: number;
+  stripe_price_id: string | null;
   created_at: string;
 }
 

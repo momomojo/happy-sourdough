@@ -36,10 +36,12 @@ export const PRODUCTS = {
     CINNAMON_ROLL: '/images/products/pastries/cinnamon-roll.png',
   },
   CAKES: {
-    // Placeholder for future cake product images
+    BIRTHDAY_CAKE: '/images/products/cakes/sourdough-birthday-cake.png',
+    CHOCOLATE_CAKE: '/images/products/cakes/chocolate-sourdough-cake.png',
   },
   COOKIES: {
-    // Placeholder for future cookie product images
+    CHOCOLATE_CHIP: '/images/products/cookies/sourdough-chocolate-chip-cookies.png',
+    SNICKERDOODLE: '/images/products/cookies/sourdough-snickerdoodle-cookies.png',
   },
 } as const;
 

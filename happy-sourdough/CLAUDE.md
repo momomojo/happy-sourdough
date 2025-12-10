@@ -379,7 +379,7 @@ Before merging any feature:
 **Active Work**: Phase 5 - Production Hardening
 
 Priority order for next steps:
-1. **Admin Setup Documentation** - Document how to create admin users for full test coverage
+1. ~~**Admin Setup Documentation**~~ ✅ Complete - Admin dashboard fully tested and documented
 2. **Reduce `as any` Casts** - Replace 27 instances with proper Supabase typing patterns
 3. **Order Tracking Tests** - Add E2E tests for `/track` page functionality
 4. **Email Delivery Tests** - Add tests for Resend email templates
@@ -388,10 +388,29 @@ Priority order for next steps:
 
 ### Database Status
 - **Tables**: 16 tables with RLS enabled
-- **Migrations Applied**: 8 migrations (001-008)
+- **Migrations Applied**: 10 migrations (001-010)
 - **Seed Data**: Products, variants, delivery zones, time slots, discount codes
 
+### Admin Dashboard Testing (2025-12-10) ✅
+
+Full admin dashboard manually tested and verified:
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Admin Login | ✅ Pass | Test account: admin@happysourdough.com |
+| Dashboard Overview | ✅ Pass | Shows pending orders, stats |
+| Products Management | ✅ Pass | 13 products with images, variants |
+| Orders Management | ✅ Pass | Filtering, pagination working |
+| Order Status Update | ✅ Pass | After RLS policy fix (migration 009) |
+| Order Status History | ✅ Pass | After RLS policy fix (migration 010) |
+| Discounts Management | ✅ Pass | 10 discount codes, full CRUD |
+
+### RLS Policy Fixes Applied
+- **Migration 009**: `add_admin_order_update_policy` - Admin UPDATE/SELECT on orders
+- **Migration 010**: `add_admin_order_status_history_policies` - Admin INSERT/SELECT on order_status_history
+
 ### Recent Commits (2025-12-10)
+- Admin RLS policy fixes for order management
 - TypeScript type safety improvements for Supabase client
 - Customer account management system
 - Admin dashboard with product and discount management

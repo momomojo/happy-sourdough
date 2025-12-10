@@ -106,9 +106,8 @@ export default function AdminSetupPage() {
         .from('admin_users')
         .insert({
           user_id: authData.user.id,
-          email: email,
           role: 'super_admin' as const,
-          full_name: fullName,
+          display_name: fullName,
           is_active: true,
         } as never);
 

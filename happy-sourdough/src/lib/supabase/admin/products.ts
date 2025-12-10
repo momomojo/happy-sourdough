@@ -70,6 +70,7 @@ export async function createProduct(product: {
   category: string;
   base_price: number;
   image_url?: string;
+  gallery_urls?: string[];
   is_available?: boolean;
   is_featured?: boolean;
   lead_time_hours?: number;
@@ -80,6 +81,7 @@ export async function createProduct(product: {
     .from('products')
     .insert({
       ...product,
+      gallery_urls: product.gallery_urls ?? [],
       is_available: product.is_available ?? true,
       is_featured: product.is_featured ?? false,
       lead_time_hours: product.lead_time_hours ?? 24,
@@ -274,4 +276,147 @@ export function generateSlug(name: string): string {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+// ===== Stripe Sync Operations =====
+
+/**
+ * Sync a product to Stripe
+ * Creates/updates Stripe Product and Price
+ */
+export async function syncProductToStripe(product: {
+  id: string;
+  name: string;
+  description?: string | null;
+  image_url?: string | null;
+  base_price: number;
+  stripe_product_id?: string | null;
+  stripe_price_id?: string | null;
+}): Promise<{ stripeProductId: string; stripePriceId: string }> {
+  const response = await fetch('/api/admin/products/sync-stripe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      productId: product.id,
+      name: product.name,
+      description: product.description,
+      imageUrl: product.image_url,
+      basePrice: product.base_price,
+      stripeProductId: product.stripe_product_id,
+      stripePriceId: product.stripe_price_id,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to sync with Stripe');
+  }
+
+  return response.json();
+}
+
+/**
+ * Archive a product in Stripe (when deleted)
+ */
+export async function archiveProductInStripe(stripeProductId: string): Promise<void> {
+  const response = await fetch(
+    `/api/admin/products/sync-stripe?stripeProductId=${encodeURIComponent(stripeProductId)}`,
+    { method: 'DELETE' }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to archive in Stripe');
+  }
+}
+
+/**
+ * Create product with automatic Stripe sync
+ */
+export async function createProductWithStripeSync(product: {
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  base_price: number;
+  image_url?: string;
+  gallery_urls?: string[];
+  is_available?: boolean;
+  is_featured?: boolean;
+  lead_time_hours?: number;
+}): Promise<Product> {
+  // First create in Supabase
+  const createdProduct = await createProduct(product);
+
+  // Then sync to Stripe
+  try {
+    await syncProductToStripe({
+      id: createdProduct.id,
+      name: createdProduct.name,
+      description: createdProduct.description,
+      image_url: createdProduct.image_url,
+      base_price: createdProduct.base_price,
+    });
+  } catch (error) {
+    console.error('Stripe sync failed (product still created in Supabase):', error);
+    // Don't throw - product is created, Stripe sync can be retried
+  }
+
+  return createdProduct;
+}
+
+/**
+ * Update product with automatic Stripe sync
+ */
+export async function updateProductWithStripeSync(
+  id: string,
+  updates: Partial<Omit<Product, 'id' | 'created_at'>>,
+  existingStripeIds?: { stripeProductId?: string | null; stripePriceId?: string | null }
+): Promise<Product> {
+  // First update in Supabase
+  const updatedProduct = await updateProduct(id, updates);
+
+  // Then sync to Stripe if price-relevant fields changed
+  const shouldSync = 'name' in updates || 'description' in updates ||
+                     'image_url' in updates || 'base_price' in updates;
+
+  if (shouldSync) {
+    try {
+      await syncProductToStripe({
+        id: updatedProduct.id,
+        name: updatedProduct.name,
+        description: updatedProduct.description,
+        image_url: updatedProduct.image_url,
+        base_price: updatedProduct.base_price,
+        stripe_product_id: existingStripeIds?.stripeProductId,
+        stripe_price_id: existingStripeIds?.stripePriceId,
+      });
+    } catch (error) {
+      console.error('Stripe sync failed (product still updated in Supabase):', error);
+      // Don't throw - product is updated, Stripe sync can be retried
+    }
+  }
+
+  return updatedProduct;
+}
+
+/**
+ * Delete product with Stripe archive
+ */
+export async function deleteProductWithStripeArchive(
+  id: string,
+  stripeProductId?: string | null
+): Promise<void> {
+  // Archive in Stripe first if it exists there
+  if (stripeProductId) {
+    try {
+      await archiveProductInStripe(stripeProductId);
+    } catch (error) {
+      console.error('Stripe archive failed:', error);
+      // Continue with deletion anyway
+    }
+  }
+
+  // Then delete from Supabase
+  await deleteProduct(id);
 }
