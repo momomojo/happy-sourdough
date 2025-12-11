@@ -316,11 +316,11 @@ All critical schema mismatches have been resolved:
 ### Phase 5: Production Hardening (Current Focus)
 **Goal**: Ready for real traffic
 
-1. **Security Audit** ✅ COMPLETE (2025-12-10)
+1. **Security Audit** ✅ COMPLETE (2025-12-11)
    - ✅ RLS policies enabled on all tables
    - ✅ API route authentication audit complete
    - ✅ Development-only endpoints protected
-   - ⏳ Rate limiting on APIs (recommended for production)
+   - ✅ Rate limiting on public APIs (checkout, discount validation, tax rate)
 
 2. **Monitoring & Logging** ✅ COMPLETE (2025-12-10)
    - ✅ Error tracking (Sentry integration with session replay)
@@ -328,10 +328,10 @@ All critical schema mismatches have been resolved:
    - ✅ Global error boundary for App Router
    - ⏳ Webhook delivery monitoring (manual via Stripe dashboard)
 
-3. **Code Quality**
+3. **Code Quality** ✅ COMPLETE (2025-12-11)
    - ✅ Reduce `as any` casts (27→6 instances, remaining are necessary Supabase workarounds)
    - ✅ Add order tracking E2E tests (14 pass, 3 skip)
-   - ⏳ Add email delivery tests (needs Jest/Vitest)
+   - ✅ Add email delivery unit tests (Vitest + 35 tests passing)
 
 ---
 
@@ -348,7 +348,23 @@ All critical schema mismatches have been resolved:
 | Checkout flow | `tests/e2e/checkout.spec.ts` | 9 pass | ✅ Working |
 | Admin dashboard | `tests/e2e/admin.spec.ts` | 3 pass, 19 skip | ✅ Working (skips require admin setup) |
 | Order tracking | `tests/e2e/order-tracking.spec.ts` | 14 pass, 3 skip | ✅ Working (skips require seeded orders) |
-| Email delivery | - | - | ⏳ Needs unit test setup (Jest/Vitest) |
+
+### Unit Test Status (Last Updated: 2025-12-11)
+
+**Result: 35 tests passed** ✅
+
+| Suite | File | Tests | Status |
+|-------|------|-------|--------|
+| Rate limiting | `tests/unit/rate-limit.test.ts` | 13 pass | ✅ Working |
+| Email templates | `tests/unit/email/email-templates.test.tsx` | 11 pass | ✅ Working |
+| Email send functions | `tests/unit/email/email-send.test.ts` | 11 pass | ✅ Working |
+
+**Test Commands:**
+```bash
+npm run test:unit        # Run all unit tests
+npm run test:unit:watch  # Watch mode
+npm run test:unit:coverage # With coverage report
+```
 
 ### E2E Test Fixes Applied (2025-12-08)
 
@@ -389,9 +405,9 @@ Priority order for next steps:
 2. ~~**Reduce `as any` Casts**~~ ✅ Complete - Reduced from 27 to ~6 instances (remaining are necessary Supabase SSR workarounds)
 3. ~~**Order Tracking Tests**~~ ✅ Complete - 14 tests pass, 3 skipped (need seeded orders)
 4. ~~**Security Audit**~~ ✅ Complete - All critical issues fixed (see below)
-5. **Email Delivery Tests** - Requires unit test setup (Jest/Vitest) for template rendering, Resend mock
-6. **Monitoring Setup** - Configure error tracking (Sentry recommended)
-7. **Rate Limiting** - Add rate limiting middleware for API routes (optional for MVP)
+5. ~~**Email Delivery Tests**~~ ✅ Complete - Vitest setup with 35 unit tests (templates + send functions + rate limiting)
+6. ~~**Rate Limiting**~~ ✅ Complete - Applied to checkout, discount validation, and tax rate APIs
+7. **Monitoring Setup** - Configure error tracking (Sentry already integrated)
 
 ### Security Audit Results (2025-12-11) ✅
 

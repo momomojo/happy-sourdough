@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { discountLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
 interface ValidateDiscountRequest {
   code: string;
@@ -7,6 +8,12 @@ interface ValidateDiscountRequest {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 20 discount validations per minute per IP (stricter to prevent brute force)
+  const rateLimitResult = await discountLimiter.check(request, 20, 'DISCOUNT');
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult);
+  }
+
   try {
     const body: ValidateDiscountRequest = await request.json();
     const { code, subtotal } = body;

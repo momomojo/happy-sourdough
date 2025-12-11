@@ -70,7 +70,7 @@ export function Footer() {
                 </div>
 
                 <div className="mt-12 pt-8 border-t border-border/30 text-center text-sm">
-                    <p className="text-muted-foreground/80">© {new Date().getFullYear()} Happy Sourdough. Baked with love, every single day.</p>
+                    <p className="text-muted-foreground/80" suppressHydrationWarning>© {new Date().getFullYear()} Happy Sourdough. Baked with love, every single day.</p>
                 </div>
             </div>
         </footer>

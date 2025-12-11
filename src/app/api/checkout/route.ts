@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/lib/supabase/server';
 import { createCheckoutSession } from '@/lib/stripe/server';
 import { calculateTax } from '@/lib/tax';
+import { checkoutLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import type { CheckoutFormData } from '@/types/checkout';
 import type { CartItem } from '@/contexts/cart-context';
 import type { Order, OrderItem } from '@/types/database';
@@ -16,6 +17,12 @@ interface CheckoutRequestBody extends CheckoutFormData {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 10 checkout attempts per minute per IP
+  const rateLimitResult = await checkoutLimiter.check(request, 10, 'CHECKOUT');
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult);
+  }
+
   try {
     const body: CheckoutRequestBody = await request.json();
     const {

@@ -9,7 +9,7 @@ export default async function HomePage() {
     const featuredProducts = await getFeaturedProducts(4);
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <>
             {/* Hero Section - Artisanal & Warm */}
             <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
                 {/* Layered Background with Depth */}
@@ -251,6 +251,6 @@ export default async function HomePage() {
                     </div>
                 </div>
             </section>
-        </div>
+        </>
     );
 }
