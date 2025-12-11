@@ -30,6 +30,9 @@ interface OrderStatusUpdateEmailProps {
   status: OrderStatus;
   estimatedTime?: string;
   deliveryType: 'pickup' | 'delivery';
+  pickupLocation?: string;
+  businessHours?: string;
+  businessEmail?: string;
 }
 
 const STATUS_INFO: Record<
@@ -103,6 +106,9 @@ export const OrderStatusUpdateEmail = ({
   status,
   estimatedTime,
   deliveryType,
+  pickupLocation = '123 Bakery Lane, San Francisco, CA 94102',
+  businessHours = 'Monday-Saturday, 7am-7pm',
+  businessEmail = 'support@happysourdough.com',
 }: OrderStatusUpdateEmailProps) => {
   const statusInfo = STATUS_INFO[status];
   const previewText = `${statusInfo.title} - Order ${orderNumber}`;
@@ -163,12 +169,10 @@ export const OrderStatusUpdateEmail = ({
               <Text style={text}>
                 <strong>Happy Sourdough Bakery</strong>
                 <br />
-                123 Main Street
-                <br />
-                Bakery Town, CA 94000
+                {pickupLocation}
                 <br />
                 <br />
-                Hours: Monday-Saturday, 7am-7pm
+                Hours: {businessHours}
               </Text>
             </Section>
           )}
@@ -209,7 +213,7 @@ export const OrderStatusUpdateEmail = ({
           <Hr style={hr} />
 
           <Text style={footer}>
-            Questions? Contact us at support@happysourdough.com
+            Questions? Contact us at {businessEmail}
           </Text>
 
           <Text style={footer}>

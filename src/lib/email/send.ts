@@ -2,6 +2,7 @@ import { resend, EMAIL_CONFIG } from './resend';
 import OrderConfirmationEmail from './templates/order-confirmation';
 import OrderStatusUpdateEmail from './templates/order-status-update';
 import OrderReadyEmail from './templates/order-ready';
+import { getBusinessInfo, getOperatingHours, formatOperatingHours } from '@/lib/business-settings';
 import type { OrderStatus } from '@/types/database';
 
 export interface OrderEmailData {
@@ -33,6 +34,9 @@ export interface OrderEmailData {
  */
 export async function sendOrderConfirmationEmail(data: OrderEmailData) {
   try {
+    // Fetch business settings
+    const businessInfo = await getBusinessInfo();
+
     const { data: emailData, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.customerEmail,
@@ -47,6 +51,8 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData) {
         total: data.total,
         deliveryType: data.deliveryType,
         deliveryAddress: data.deliveryAddress,
+        pickupLocation: businessInfo.business_address,
+        businessEmail: businessInfo.business_email,
         timeSlot: data.timeSlot,
         estimatedTime: data.timeSlot
           ? `${data.timeSlot.windowStart} - ${data.timeSlot.windowEnd}`
@@ -77,6 +83,11 @@ export async function sendOrderStatusUpdateEmail(
   }
 ) {
   try {
+    // Fetch business settings
+    const businessInfo = await getBusinessInfo();
+    const operatingHours = await getOperatingHours();
+    const businessHours = formatOperatingHours(operatingHours);
+
     const { data: emailData, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.customerEmail,
@@ -87,6 +98,9 @@ export async function sendOrderStatusUpdateEmail(
         status: data.status,
         estimatedTime: data.estimatedTime,
         deliveryType: data.deliveryType,
+        pickupLocation: businessInfo.business_address,
+        businessHours,
+        businessEmail: businessInfo.business_email,
       }),
     });
 
@@ -118,6 +132,11 @@ export async function sendOrderReadyEmail(
   }
 ) {
   try {
+    // Fetch business settings
+    const businessInfo = await getBusinessInfo();
+    const operatingHours = await getOperatingHours();
+    const businessHours = formatOperatingHours(operatingHours);
+
     const { data: emailData, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.customerEmail,
@@ -129,7 +148,10 @@ export async function sendOrderReadyEmail(
         items: data.items,
         deliveryAddress: data.deliveryAddress,
         deliveryETA: data.deliveryETA,
-        pickupLocation: data.pickupLocation,
+        pickupLocation: data.pickupLocation || businessInfo.business_address,
+        businessHours,
+        businessPhone: businessInfo.business_phone,
+        businessEmail: businessInfo.business_email,
         timeSlot: data.timeSlot,
       }),
     });

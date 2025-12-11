@@ -206,6 +206,20 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     });
   }
 
+  // Decrement inventory for confirmed order
+  const { error: inventoryError } = await (getSupabaseAdmin() as ReturnType<typeof getSupabaseAdmin>).rpc('decrement_inventory_for_order' as never, {
+    order_id_param: orderId,
+  } as never);
+
+  if (inventoryError) {
+    Sentry.captureException(inventoryError, {
+      level: 'warning',
+      tags: { webhook: 'stripe', step: 'decrement_inventory' },
+      extra: { orderId },
+    });
+    // Don't throw - inventory tracking failure shouldn't block order confirmation
+  }
+
   // Send confirmation email
   try {
     await sendConfirmationEmail(orderId);
@@ -347,6 +361,20 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
       extra: { orderId: order.id },
     });
     return;
+  }
+
+  // Restore inventory for refunded order
+  const { error: inventoryError } = await (getSupabaseAdmin() as ReturnType<typeof getSupabaseAdmin>).rpc('restore_inventory_for_order' as never, {
+    order_id_param: order.id,
+  } as never);
+
+  if (inventoryError) {
+    Sentry.captureException(inventoryError, {
+      level: 'warning',
+      tags: { webhook: 'stripe', step: 'restore_inventory' },
+      extra: { orderId: order.id },
+    });
+    // Don't throw - inventory restoration failure shouldn't block refund processing
   }
 
   // Add status history entry

@@ -252,6 +252,24 @@ export interface BusinessSetting {
   updated_by: string | null;
 }
 
+// Typed business settings values
+export interface BusinessInfo {
+  business_name: string;
+  business_phone: string;
+  business_email: string;
+  business_address: string;
+}
+
+export interface OperatingHours {
+  monday: { open: string; close: string; closed: boolean };
+  tuesday: { open: string; close: string; closed: boolean };
+  wednesday: { open: string; close: string; closed: boolean };
+  thursday: { open: string; close: string; closed: boolean };
+  friday: { open: string; close: string; closed: boolean };
+  saturday: { open: string; close: string; closed: boolean };
+  sunday: { open: string; close: string; closed: boolean };
+}
+
 // Supabase Database type helper
 export interface Database {
   public: {

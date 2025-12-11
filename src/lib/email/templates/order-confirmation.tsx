@@ -32,6 +32,7 @@ interface OrderConfirmationEmailProps {
   deliveryType: 'pickup' | 'delivery';
   deliveryAddress?: string;
   pickupLocation?: string;
+  businessEmail?: string;
   timeSlot?: {
     date: string;
     windowStart: string;
@@ -50,7 +51,8 @@ export const OrderConfirmationEmail = ({
   total,
   deliveryType,
   deliveryAddress,
-  pickupLocation = '123 Main Street, Bakery Town, CA 94000',
+  pickupLocation = '123 Bakery Lane, San Francisco, CA 94102',
+  businessEmail = 'support@happysourdough.com',
   timeSlot,
   estimatedTime,
 }: OrderConfirmationEmailProps) => {
@@ -196,7 +198,7 @@ export const OrderConfirmationEmail = ({
 
           <Text style={footer}>
             We&apos;ll send you updates as your order progresses. If you have any questions,
-            please don&apos;t hesitate to contact us at support@happysourdough.com
+            please don&apos;t hesitate to contact us at {businessEmail}
           </Text>
 
           <Text style={footer}>

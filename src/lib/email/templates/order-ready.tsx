@@ -27,6 +27,9 @@ interface OrderReadyEmailProps {
   pickupLocation?: string;
   deliveryAddress?: string;
   deliveryETA?: string;
+  businessHours?: string;
+  businessPhone?: string;
+  businessEmail?: string;
   timeSlot?: {
     date: string;
     windowStart: string;
@@ -39,9 +42,12 @@ export const OrderReadyEmail = ({
   customerName,
   deliveryType,
   items,
-  pickupLocation = '123 Main Street, Bakery Town, CA 94000',
+  pickupLocation = '123 Bakery Lane, San Francisco, CA 94102',
   deliveryAddress,
   deliveryETA,
+  businessHours = 'Monday - Saturday: 7:00 AM - 7:00 PM\nSunday: 8:00 AM - 5:00 PM',
+  businessPhone = '(555) 123-4567',
+  businessEmail = 'support@happysourdough.com',
   timeSlot,
 }: OrderReadyEmailProps) => {
   const previewText = `Your order is ready for ${deliveryType === 'pickup' ? 'pickup' : 'delivery'}!`;
@@ -119,9 +125,12 @@ export const OrderReadyEmail = ({
                   Business Hours:
                 </Text>
                 <Text style={hoursText}>
-                  Monday - Saturday: 7:00 AM - 7:00 PM
-                  <br />
-                  Sunday: 8:00 AM - 5:00 PM
+                  {businessHours.split('\n').map((line, i) => (
+                    <React.Fragment key={i}>
+                      {line}
+                      {i < businessHours.split('\n').length - 1 && <br />}
+                    </React.Fragment>
+                  ))}
                 </Text>
               </Section>
 
@@ -216,8 +225,8 @@ export const OrderReadyEmail = ({
           <Hr style={hr} />
 
           <Text style={footer}>
-            Questions about your order? Contact us at support@happysourdough.com
-            or call (555) 123-4567
+            Questions about your order? Contact us at {businessEmail}
+            or call {businessPhone}
           </Text>
 
           <Text style={footer}>
