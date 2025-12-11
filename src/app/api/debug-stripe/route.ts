@@ -30,7 +30,7 @@ export async function GET() {
     if (process.env.STRIPE_SECRET_KEY) {
       const Stripe = (await import('stripe')).default;
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: '2025-11-17.clover',
+        typescript: true,
       });
 
       // Try to list 1 product to verify connection
