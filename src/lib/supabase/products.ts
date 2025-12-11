@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs';
 import { createReadOnlyClient } from './server';
 import type { Product, ProductVariant } from '@/types/database';
 
@@ -32,6 +33,10 @@ export async function getProducts(category?: string): Promise<ProductWithVariant
   const { data, error } = await query;
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'products', category: category || 'all' },
+      extra: { category },
+    });
     console.error('Error fetching products:', error);
     return [];
   }
@@ -61,6 +66,10 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     .single();
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'product', product_slug: slug },
+      extra: { slug },
+    });
     console.error('Error fetching product:', error);
     return null; // Layout handles null product via notFound() or similar
   }
@@ -82,6 +91,10 @@ export async function getProductVariants(productId: string): Promise<ProductVari
     .order('sort_order', { ascending: true });
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'product_variants', product_id: productId },
+      extra: { productId },
+    });
     console.error('Error fetching product variants:', error);
     return [];
   }
@@ -120,6 +133,9 @@ export async function getDeliveryZones() {
     .order('sort_order');
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'delivery_zones' },
+    });
     console.error('Error fetching delivery zones:', error);
     return [];
   }
@@ -142,6 +158,10 @@ export async function getProductsByCategory(category: string, limit: number = 4)
     .limit(limit);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'products_by_category', category },
+      extra: { category, limit },
+    });
     console.error('Error fetching products by category:', error);
     return [];
   }
@@ -161,6 +181,9 @@ export async function getAllProductSlugs(): Promise<string[]> {
     .eq('is_available', true);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'product_slugs' },
+    });
     console.error('Error fetching product slugs:', error);
     return [];
   }
@@ -185,6 +208,10 @@ export async function searchProducts(query: string): Promise<ProductWithVariants
     .order('name');
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'search', entity: 'products' },
+      extra: { query },
+    });
     console.error('Error searching products:', error);
     return [];
   }
@@ -219,6 +246,10 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
     .limit(limit);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'featured_products' },
+      extra: { limit },
+    });
     console.error('Error fetching featured products:', error);
     // Return empty array to verify frontend renders even if DB is broken
     return [];
@@ -247,6 +278,9 @@ export async function getCategories(): Promise<string[]> {
     .eq('is_available', true);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { operation: 'fetch', entity: 'categories' },
+    });
     console.error('Error fetching categories:', error);
     return [];
   }

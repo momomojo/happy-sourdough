@@ -3,15 +3,27 @@ import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
 import Stripe from 'stripe';
 import { verifyWebhookSignature } from '@/lib/stripe/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { sendOrderConfirmationEmail } from '@/lib/email/send';
+import type { Database, Order } from '@/types/database';
 
-// Create a Supabase client with service role for webhook operations
-// This bypasses RLS as webhooks don't have user context
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization of Supabase admin client to avoid module-level env var access
+// This is necessary for CI builds that use placeholder env vars
+let _supabaseAdmin: SupabaseClient<Database> | null = null;
+
+function getSupabaseAdmin(): SupabaseClient<Database> {
+  if (!_supabaseAdmin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    _supabaseAdmin = createClient<Database>(url, key);
+  }
+  return _supabaseAdmin;
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -125,7 +137,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   });
 
   // Fetch order to get discount_code_id
-  const { data: order, error: fetchError } = await supabaseAdmin
+  const { data: orderData, error: fetchError } = await getSupabaseAdmin()
     .from('orders')
     .select('discount_code_id')
     .eq('id', orderId)
@@ -139,15 +151,17 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     throw fetchError;
   }
 
+  const order = orderData as { discount_code_id: string | null };
+
   // Update order with payment information
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await getSupabaseAdmin()
     .from('orders')
     .update({
       stripe_payment_intent_id: session.payment_intent as string,
       payment_status: 'paid',
       status: 'confirmed',
       confirmed_at: new Date().toISOString(),
-    })
+    } as never)
     .eq('id', orderId);
 
   if (updateError) {
@@ -160,9 +174,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   // Increment discount code usage count atomically if discount was used
   if (order.discount_code_id) {
-    const { error: discountError } = await supabaseAdmin.rpc('increment_discount_usage', {
+    const { error: discountError } = await (getSupabaseAdmin() as ReturnType<typeof getSupabaseAdmin>).rpc('increment_discount_usage' as never, {
       discount_code_id: order.discount_code_id,
-    });
+    } as never);
 
     if (discountError) {
       Sentry.captureException(discountError, {
@@ -175,14 +189,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
 
   // Add status history entry
-  const { error: historyError } = await supabaseAdmin
+  const { error: historyError } = await getSupabaseAdmin()
     .from('order_status_history')
     .insert({
       order_id: orderId,
       status: 'confirmed',
       notes: 'Payment confirmed via Stripe',
       changed_by: null,
-    });
+    } as never);
 
   if (historyError) {
     Sentry.captureException(historyError, {
@@ -211,7 +225,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
  */
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   // Find order by payment intent
-  const { data: orders, error: findError } = await supabaseAdmin
+  const { data: orders, error: findError } = await getSupabaseAdmin()
     .from('orders')
     .select('id, order_number, time_slot_id')
     .eq('stripe_payment_intent_id', paymentIntent.id);
@@ -225,7 +239,7 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
     return;
   }
 
-  const order = orders[0];
+  const order = orders[0] as { id: string; order_number: string; time_slot_id: string | null };
 
   Sentry.addBreadcrumb({
     message: `Payment failed for order: ${order.order_number}`,
@@ -235,9 +249,9 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
 
   // Release time slot if one was reserved
   if (order.time_slot_id) {
-    const { error: releaseError } = await supabaseAdmin.rpc('decrement_slot_orders', {
+    const { error: releaseError } = await (getSupabaseAdmin() as ReturnType<typeof getSupabaseAdmin>).rpc('decrement_slot_orders' as never, {
       slot_id: order.time_slot_id,
-    });
+    } as never);
 
     if (releaseError) {
       Sentry.captureException(releaseError, {
@@ -249,9 +263,9 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   }
 
   // Update order payment status
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await getSupabaseAdmin()
     .from('orders')
-    .update({ payment_status: 'failed' })
+    .update({ payment_status: 'failed' } as never)
     .eq('id', order.id);
 
   if (updateError) {
@@ -262,14 +276,14 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   }
 
   // Add status history entry
-  const { error: historyError } = await supabaseAdmin
+  const { error: historyError } = await getSupabaseAdmin()
     .from('order_status_history')
     .insert({
       order_id: order.id,
       status: 'cancelled',
       notes: 'Payment failed - time slot released',
       changed_by: null,
-    });
+    } as never);
 
   if (historyError) {
     Sentry.captureException(historyError, {
@@ -296,7 +310,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   }
 
   // Find order by payment intent
-  const { data: orders, error: findError } = await supabaseAdmin
+  const { data: orders, error: findError } = await getSupabaseAdmin()
     .from('orders')
     .select('id, order_number, status')
     .eq('stripe_payment_intent_id', paymentIntentId);
@@ -310,7 +324,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     return;
   }
 
-  const order = orders[0];
+  const order = orders[0] as { id: string; order_number: string; status: string };
 
   Sentry.addBreadcrumb({
     message: `Processing refund for order: ${order.order_number}`,
@@ -319,12 +333,12 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   });
 
   // Update order status to refunded
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await getSupabaseAdmin()
     .from('orders')
     .update({
       status: 'refunded',
       payment_status: 'refunded',
-    })
+    } as never)
     .eq('id', order.id);
 
   if (updateError) {
@@ -336,14 +350,14 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   }
 
   // Add status history entry
-  const { error: historyError } = await supabaseAdmin
+  const { error: historyError } = await getSupabaseAdmin()
     .from('order_status_history')
     .insert({
       order_id: order.id,
       status: 'refunded',
       notes: `Refund processed: ${charge.amount_refunded / 100} ${charge.currency.toUpperCase()}`,
       changed_by: null,
-    });
+    } as never);
 
   if (historyError) {
     Sentry.captureException(historyError, {
@@ -377,13 +391,13 @@ async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
   });
 
   // Fetch order to get time_slot_id
-  const { data: order, error: fetchError } = await supabaseAdmin
+  const { data: orderData, error: fetchError } = await getSupabaseAdmin()
     .from('orders')
     .select('id, order_number, time_slot_id, payment_status')
     .eq('id', orderId)
     .single();
 
-  if (fetchError || !order) {
+  if (fetchError || !orderData) {
     Sentry.captureException(fetchError, {
       level: 'warning',
       tags: { webhook: 'stripe', step: 'fetch_expired_order' },
@@ -391,6 +405,8 @@ async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
     });
     return;
   }
+
+  const order = orderData as { id: string; order_number: string; time_slot_id: string | null; payment_status: string };
 
   // Only process if payment is still pending (not already paid or failed)
   if (order.payment_status !== 'pending') {
@@ -404,9 +420,9 @@ async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
 
   // Release time slot if one was reserved
   if (order.time_slot_id) {
-    const { error: releaseError } = await supabaseAdmin.rpc('decrement_slot_orders', {
+    const { error: releaseError } = await (getSupabaseAdmin() as ReturnType<typeof getSupabaseAdmin>).rpc('decrement_slot_orders' as never, {
       slot_id: order.time_slot_id,
-    });
+    } as never);
 
     if (releaseError) {
       Sentry.captureException(releaseError, {
@@ -418,12 +434,12 @@ async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
   }
 
   // Update order status
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await getSupabaseAdmin()
     .from('orders')
     .update({
       status: 'cancelled',
       payment_status: 'failed',
-    })
+    } as never)
     .eq('id', order.id);
 
   if (updateError) {
@@ -435,14 +451,14 @@ async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
   }
 
   // Add status history entry
-  const { error: historyError } = await supabaseAdmin
+  const { error: historyError } = await getSupabaseAdmin()
     .from('order_status_history')
     .insert({
       order_id: order.id,
       status: 'cancelled',
       notes: 'Checkout session expired - time slot released',
       changed_by: null,
-    });
+    } as never);
 
   if (historyError) {
     Sentry.captureException(historyError, {
@@ -458,15 +474,17 @@ async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
  */
 async function sendConfirmationEmail(orderId: string) {
   // Fetch order details
-  const { data: order, error: orderError } = await supabaseAdmin
+  const { data: orderData, error: orderError } = await getSupabaseAdmin()
     .from('orders')
     .select('*')
     .eq('id', orderId)
     .single();
 
-  if (orderError || !order) {
+  if (orderError || !orderData) {
     throw new Error(`Failed to fetch order: ${orderError?.message}`);
   }
+
+  const order = orderData as Order;
 
   // Get customer email
   let customerEmail: string | undefined;
@@ -475,15 +493,16 @@ async function sendConfirmationEmail(orderId: string) {
   if (order.guest_email) {
     customerEmail = order.guest_email;
   } else if (order.user_id) {
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
+    const { data: authUser } = await getSupabaseAdmin().auth.admin.getUserById(order.user_id);
     customerEmail = authUser?.user?.email;
 
-    const { data: profile } = await supabaseAdmin
+    const { data: profileData } = await getSupabaseAdmin()
       .from('customer_profiles')
       .select('first_name, last_name')
       .eq('id', order.user_id)
       .single();
 
+    const profile = profileData as { first_name: string | null; last_name: string | null } | null;
     if (profile) {
       customerName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Customer';
     }
@@ -494,7 +513,7 @@ async function sendConfirmationEmail(orderId: string) {
   }
 
   // Get order items
-  const { data: orderItems, error: itemsError } = await supabaseAdmin
+  const { data: orderItems, error: itemsError } = await getSupabaseAdmin()
     .from('order_items')
     .select(`
       *,
@@ -510,12 +529,13 @@ async function sendConfirmationEmail(orderId: string) {
   // Get time slot if available
   let timeSlot;
   if (order.time_slot_id) {
-    const { data: slot } = await supabaseAdmin
+    const { data: slotData } = await getSupabaseAdmin()
       .from('time_slots')
       .select('date, window_start, window_end')
       .eq('id', order.time_slot_id)
       .single();
 
+    const slot = slotData as { date: string; window_start: string; window_end: string } | null;
     if (slot) {
       timeSlot = {
         date: slot.date,
@@ -534,6 +554,19 @@ async function sendConfirmationEmail(orderId: string) {
     total_price: item.total_price as number,
   }));
 
+  // Format delivery address as string for email
+  let deliveryAddressStr: string | undefined;
+  if (order.delivery_address) {
+    const addr = order.delivery_address;
+    deliveryAddressStr = [
+      addr.street,
+      addr.apt,
+      addr.city,
+      addr.state,
+      addr.zip
+    ].filter(Boolean).join(', ');
+  }
+
   // Send email
   await sendOrderConfirmationEmail({
     orderNumber: order.order_number,
@@ -545,7 +578,7 @@ async function sendConfirmationEmail(orderId: string) {
     tax: order.tax_amount,
     total: order.total,
     deliveryType: order.fulfillment_type,
-    deliveryAddress: order.delivery_address || undefined,
+    deliveryAddress: deliveryAddressStr,
     timeSlot,
   });
 }

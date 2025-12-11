@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from './server';
 import { redirect } from 'next/navigation';
 
@@ -149,6 +150,9 @@ export async function hasAdminUsers(): Promise<boolean> {
     .eq('is_active', true);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { auth_action: 'check_admin_users' },
+    });
     console.error('Error checking admin users:', error);
     return true; // Assume admins exist to be safe
   }
@@ -250,8 +254,27 @@ export async function signInAdmin(
   if (adminError || !adminUser) {
     // Sign out non-admin users
     await supabase.auth.signOut();
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Non-admin login attempt',
+      level: 'warning',
+      data: { email },
+    });
     return { user: null, error: 'Unauthorized: Admin access required' };
   }
+
+  // Set Sentry user context for better error tracking
+  Sentry.setUser({
+    id: data.user.id,
+    email: data.user.email!,
+  });
+
+  Sentry.addBreadcrumb({
+    category: 'auth',
+    message: 'Admin login successful',
+    level: 'info',
+    data: { role: adminUser.role },
+  });
 
   return {
     user: {

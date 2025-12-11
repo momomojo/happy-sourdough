@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { toast } from 'sonner';
 
 export interface CartItem {
@@ -38,6 +39,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         setItems(JSON.parse(stored));
       } catch (error) {
+        Sentry.captureException(error, {
+          tags: { cart_action: 'load', source: 'localStorage' },
+        });
         console.error('Error loading cart:', error);
       }
     }
@@ -53,6 +57,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = useCallback((newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     const quantity = newItem.quantity || 1;
+
+    // Add breadcrumb for debugging checkout issues
+    Sentry.addBreadcrumb({
+      category: 'cart',
+      message: `Add item: ${newItem.productName}`,
+      level: 'info',
+      data: { productId: newItem.productId, variantId: newItem.variantId, quantity },
+    });
 
     setItems(current => {
       const existingIndex = current.findIndex(item => item.variantId === newItem.variantId);
@@ -75,6 +87,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeItem = useCallback((variantId: string) => {
+    // Add breadcrumb for debugging checkout issues
+    Sentry.addBreadcrumb({
+      category: 'cart',
+      message: 'Remove item',
+      level: 'info',
+      data: { variantId },
+    });
+
     setItems(current => {
       const item = current.find(i => i.variantId === variantId);
       if (item) {
@@ -101,9 +121,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [removeItem]);
 
   const clearCart = useCallback(() => {
+    // Add breadcrumb for debugging checkout issues
+    Sentry.addBreadcrumb({
+      category: 'cart',
+      message: 'Clear cart',
+      level: 'info',
+      data: { itemCount: items.length },
+    });
+
     setItems([]);
     toast.success('Cart cleared');
-  }, []);
+  }, [items.length]);
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const subtotal = items.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
