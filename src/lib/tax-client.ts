@@ -6,12 +6,13 @@
 
 const DEFAULT_TAX_RATE = 0.08; // 8% fallback
 
-interface TaxSettings {
-  type: 'flat' | 'by_zone' | 'by_distance';
-  rate: number;
-  name: string;
-  zones?: { zone_id: string; rate: number }[];
-}
+// TaxSettings interface for future use when we implement zone-based taxes
+// interface TaxSettings {
+//   type: 'flat' | 'by_zone' | 'by_distance';
+//   rate: number;
+//   name: string;
+//   zones?: { zone_id: string; rate: number }[];
+// }
 
 let cachedTaxRate: number | null = null;
 

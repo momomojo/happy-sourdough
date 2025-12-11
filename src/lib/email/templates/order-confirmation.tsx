@@ -69,7 +69,7 @@ export const OrderConfirmationEmail = ({
           </Text>
 
           <Text style={text}>
-            Your order has been confirmed and we're getting started on baking your fresh goodies!
+            Your order has been confirmed and we&apos;re getting started on baking your fresh goodies!
           </Text>
 
           <Section style={orderBox}>
@@ -195,8 +195,8 @@ export const OrderConfirmationEmail = ({
           <Hr style={hr} />
 
           <Text style={footer}>
-            We'll send you updates as your order progresses. If you have any questions,
-            please don't hesitate to contact us at support@happysourdough.com
+            We&apos;ll send you updates as your order progresses. If you have any questions,
+            please don&apos;t hesitate to contact us at support@happysourdough.com
           </Text>
 
           <Text style={footer}>

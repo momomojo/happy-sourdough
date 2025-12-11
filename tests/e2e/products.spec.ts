@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { PRODUCT_CATEGORIES, SAMPLE_PRODUCTS } from './fixtures/test-data';
 import { dismissCookieBanner } from './fixtures/test-utils';
 
 test.describe('Product Browsing', () => {
@@ -94,7 +93,6 @@ test.describe('Product Browsing', () => {
 
     // Click on first product
     const firstProduct = page.locator('[data-testid="product-card"], .product-card, article').first();
-    const productName = await firstProduct.textContent();
 
     // Click on the product (either card itself or a link inside it)
     const productLink = firstProduct.getByRole('link').first()

@@ -192,7 +192,7 @@ export const OrderStatusUpdateEmail = ({
               </Heading>
               <Text style={text}>
                 Thank you for choosing Happy Sourdough. We hope you enjoy your order!
-                We'd love to hear your feedback.
+                We&apos;d love to hear your feedback.
               </Text>
             </Section>
           )}

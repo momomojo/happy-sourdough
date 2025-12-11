@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './fixtures/test-data';
-import { openAdminSidebar } from './fixtures/test-utils';
 
 test.describe('Admin Panel', () => {
   test.describe('Admin Login', () => {

@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import type { Order, OrderItem, OrderStatus, OrderStatusHistory } from '@/types/database';
+import type { Order, OrderItem, OrderStatusHistory } from '@/types/database';
 
 export interface OrderWithDetails extends Order {
   items: (OrderItem & {

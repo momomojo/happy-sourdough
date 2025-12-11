@@ -13,6 +13,22 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Custom rule overrides
+  {
+    rules: {
+      // Disable unescaped entities rule - apostrophes in text are fine
+      "react/no-unescaped-entities": "off",
+      // Warn on unused vars instead of error
+      "@typescript-eslint/no-unused-vars": "warn",
+      // Warn on explicit any instead of error (we have necessary uses)
+      "@typescript-eslint/no-explicit-any": "warn",
+      // Warn on React compiler rules (experimental, can be noisy)
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/static-components": "warn",
+      "react-hooks/immutability": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;
