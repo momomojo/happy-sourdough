@@ -119,15 +119,18 @@ test.describe('Admin Panel', () => {
 
     test('should display dashboard statistics', async ({ page }) => {
       // Verify stat cards are displayed
-      const statCards = page.locator('[data-testid="stat-card"], .stat-card, .card');
+      const statCards = page.locator('[data-slot="card"]');
       await page.waitForTimeout(1000);
       const count = await statCards.count();
       expect(count).toBeGreaterThan(0);
 
-      // Look for common metrics
-      const totalOrders = page.locator('text=/total orders/i');
-      if (await totalOrders.count() > 0) {
-        await expect(totalOrders.first()).toBeVisible();
+      // Look for common metrics - the dashboard shows "Today's Orders", "Pending Orders", etc.
+      const todaysOrders = page.locator('text=/today\'?s orders/i');
+      const pendingOrders = page.locator('text=/pending orders/i');
+      if (await todaysOrders.count() > 0) {
+        await expect(todaysOrders.first()).toBeVisible();
+      } else if (await pendingOrders.count() > 0) {
+        await expect(pendingOrders.first()).toBeVisible();
       }
     });
 
@@ -182,32 +185,28 @@ test.describe('Admin Panel', () => {
     });
 
     test('should display user menu in header', async ({ page }) => {
-      // Look for user avatar/menu
-      const userMenu = page.locator('[data-testid="user-menu"], .user-menu, button[aria-label*="user"]');
-      if (await userMenu.count() > 0) {
-        await userMenu.first().click();
+      // Look for user menu trigger
+      const userMenuTrigger = page.getByTestId('user-menu-trigger');
+      await expect(userMenuTrigger).toBeVisible();
+      await userMenuTrigger.click();
 
-        // Verify dropdown appears
-        const signOutBtn = page.getByRole('menuitem', { name: /sign out|logout/i })
-          .or(page.getByRole('button', { name: /sign out|logout/i }));
-        await expect(signOutBtn.first()).toBeVisible();
-      }
+      // Verify dropdown appears with sign out option
+      const signOutBtn = page.getByRole('menuitem', { name: /sign out/i });
+      await expect(signOutBtn).toBeVisible();
     });
 
     test('should logout successfully', async ({ page }) => {
-      // Open user menu - the trigger is an avatar button inside a dropdown
-      const avatarButton = page.locator('button').filter({ has: page.locator('[class*="avatar"], [class*="Avatar"]') }).first();
-      await avatarButton.click();
+      // Open user menu using the test id
+      const userMenuTrigger = page.getByTestId('user-menu-trigger');
+      await userMenuTrigger.click();
 
-      // Wait for dropdown menu to appear
-      await page.waitForSelector('[role="menu"]', { timeout: 5000 });
-
-      // Click sign out
+      // Wait for dropdown menu to appear and click sign out
       const signOutBtn = page.getByRole('menuitem', { name: /sign out/i });
+      await signOutBtn.waitFor({ state: 'visible', timeout: 5000 });
       await signOutBtn.click();
 
       // Wait for redirect to login
-      await page.waitForURL(/\/admin\/login/);
+      await page.waitForURL(/\/admin\/login/, { timeout: 10000 });
 
       // Verify login page is shown (wait for load)
       await page.waitForLoadState('networkidle');
@@ -254,18 +253,27 @@ test.describe('Admin Panel', () => {
     });
 
     test('should filter orders by status', async ({ page }) => {
-      // Look for status filter
-      const statusFilter = page.locator('[data-testid="status-filter"], select, [role="combobox"]');
-      if (await statusFilter.count() > 0) {
-        await statusFilter.first().click();
-        await page.waitForTimeout(500);
+      // Look for status filter trigger button (Radix Select uses button[role="combobox"])
+      const statusTrigger = page.locator('#status-filter');
+      if (await statusTrigger.count() > 0) {
+        // Click to open the dropdown
+        await statusTrigger.click();
 
-        // Select a status
-        const pendingOption = page.getByRole('option', { name: /pending|received/i })
-          .or(page.getByText(/pending|received/i));
-        if (await pendingOption.count() > 0) {
-          await pendingOption.first().click();
-          await page.waitForTimeout(1000);
+        // Wait for the dropdown content to be visible (it's rendered in a portal)
+        // Radix UI Select items don't use role="option", they're rendered with custom ARIA
+        await page.waitForSelector('[data-slot="select-content"]', { state: 'visible', timeout: 2000 });
+
+        // Click on "Received" option using the exact text match
+        // The items are rendered with [data-slot="select-item"]
+        const receivedOption = page.locator('[data-slot="select-item"]').filter({ hasText: 'Received' });
+        if (await receivedOption.count() > 0) {
+          await receivedOption.click();
+
+          // Wait for the page to reload with the filter applied
+          await page.waitForLoadState('networkidle');
+
+          // Verify the filter was applied by checking the URL
+          await page.waitForURL(/status=received/, { timeout: 5000 });
         }
       }
     });
