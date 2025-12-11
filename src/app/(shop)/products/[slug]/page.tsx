@@ -9,6 +9,7 @@ import { AllergenList } from '@/components/products/allergen-list';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import type { Product, ProductVariant } from '@/types/database';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -52,9 +53,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   let slug: string;
-  let product;
-  let variants;
-  let relatedProducts;
+  let product: Product | null;
+  let variants: ProductVariant[] = [];
+  let relatedProducts: Product[] = [];
 
   try {
     const resolvedParams = await params;
