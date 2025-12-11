@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getProductBySlug, getProductVariants, getProductsByCategory } from '@/lib/supabase/products';
 
 export async function GET(request: Request) {
+  // SECURITY: Only allow in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get('slug') || 'classic-sourdough-loaf';
 

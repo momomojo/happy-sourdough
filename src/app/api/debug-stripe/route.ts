@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server';
 export const maxDuration = 30;
 
 export async function GET() {
+  // SECURITY: Only allow in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const startTime = Date.now();
 
   const stripeCheck = {

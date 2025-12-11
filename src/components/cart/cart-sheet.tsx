@@ -24,7 +24,6 @@ export function CartSheet({ isOpen, onClose }: CartSheetProps) {
   const { items, itemCount, subtotal, clearCart } = useCart();
 
   const handleCheckout = () => {
-    // TODO: Navigate to checkout page
     window.location.href = '/checkout';
   };
 

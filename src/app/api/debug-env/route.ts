@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 export async function GET() {
+  // SECURITY: Only allow in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const envCheck = {
     NEXT_PUBLIC_SUPABASE_URL: {
       exists: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
