@@ -47,6 +47,12 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case 'checkout.session.expired': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutSessionExpired(session);
+        break;
+      }
+
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('PaymentIntent succeeded:', paymentIntent.id);
@@ -94,6 +100,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   console.log(`Processing checkout.session.completed for order: ${orderId}`);
 
+  // Fetch order to get discount_code_id
+  const { data: order, error: fetchError } = await supabaseAdmin
+    .from('orders')
+    .select('discount_code_id')
+    .eq('id', orderId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching order:', fetchError);
+    throw fetchError;
+  }
+
   // Update order with payment information
   const { error: updateError } = await supabaseAdmin
     .from('orders')
@@ -108,6 +126,20 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   if (updateError) {
     console.error('Error updating order:', updateError);
     throw updateError;
+  }
+
+  // Increment discount code usage count atomically if discount was used
+  if (order.discount_code_id) {
+    const { error: discountError } = await supabaseAdmin.rpc('increment_discount_usage', {
+      discount_code_id: order.discount_code_id,
+    });
+
+    if (discountError) {
+      console.error('Error incrementing discount code usage:', discountError);
+      // Don't throw - discount tracking failure shouldn't block order confirmation
+    } else {
+      console.log(`Incremented usage count for discount code: ${order.discount_code_id}`);
+    }
   }
 
   // Add status history entry
@@ -234,12 +266,13 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
 /**
  * Handle failed payment
+ * Releases time slot and updates order status
  */
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   // Find order by payment intent
   const { data: orders, error: findError } = await supabaseAdmin
     .from('orders')
-    .select('id, order_number')
+    .select('id, order_number, time_slot_id')
     .eq('stripe_payment_intent_id', paymentIntent.id);
 
   if (findError || !orders || orders.length === 0) {
@@ -251,11 +284,38 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
 
   console.log(`Payment failed for order: ${order.order_number}`);
 
+  // Release time slot if one was reserved
+  if (order.time_slot_id) {
+    const { error: releaseError } = await supabaseAdmin.rpc('decrement_slot_orders', {
+      slot_id: order.time_slot_id,
+    });
+
+    if (releaseError) {
+      console.error('Error releasing time slot:', releaseError);
+    } else {
+      console.log(`Released time slot ${order.time_slot_id} for failed order ${order.order_number}`);
+    }
+  }
+
   // Update order payment status
   await supabaseAdmin
     .from('orders')
     .update({ payment_status: 'failed' })
     .eq('id', order.id);
+
+  // Add status history entry
+  const { error: historyError } = await supabaseAdmin
+    .from('order_status_history')
+    .insert({
+      order_id: order.id,
+      status: 'cancelled',
+      notes: 'Payment failed - time slot released',
+      changed_by: null,
+    });
+
+  if (historyError) {
+    console.error('Error creating status history for failed payment:', historyError);
+  }
 }
 
 /**
@@ -313,4 +373,80 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   }
 
   console.log(`Order ${order.order_number} marked as refunded`);
+}
+
+/**
+ * Handle expired checkout session
+ * Releases time slot when customer abandons checkout
+ */
+async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
+  const orderId = session.metadata?.order_id;
+
+  if (!orderId) {
+    console.error('No order_id in expired session metadata');
+    return;
+  }
+
+  console.log(`Processing checkout.session.expired for order: ${orderId}`);
+
+  // Fetch order to get time_slot_id
+  const { data: order, error: fetchError } = await supabaseAdmin
+    .from('orders')
+    .select('id, order_number, time_slot_id, payment_status')
+    .eq('id', orderId)
+    .single();
+
+  if (fetchError || !order) {
+    console.error('Error fetching order for expired session:', fetchError);
+    return;
+  }
+
+  // Only process if payment is still pending (not already paid or failed)
+  if (order.payment_status !== 'pending') {
+    console.log(`Order ${order.order_number} already has status ${order.payment_status}, skipping`);
+    return;
+  }
+
+  // Release time slot if one was reserved
+  if (order.time_slot_id) {
+    const { error: releaseError } = await supabaseAdmin.rpc('decrement_slot_orders', {
+      slot_id: order.time_slot_id,
+    });
+
+    if (releaseError) {
+      console.error('Error releasing time slot:', releaseError);
+    } else {
+      console.log(`Released time slot ${order.time_slot_id} for expired session ${order.order_number}`);
+    }
+  }
+
+  // Update order status
+  const { error: updateError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'cancelled',
+      payment_status: 'failed',
+    })
+    .eq('id', order.id);
+
+  if (updateError) {
+    console.error('Error updating order for expired session:', updateError);
+    return;
+  }
+
+  // Add status history entry
+  const { error: historyError } = await supabaseAdmin
+    .from('order_status_history')
+    .insert({
+      order_id: order.id,
+      status: 'cancelled',
+      notes: 'Checkout session expired - time slot released',
+      changed_by: null,
+    });
+
+  if (historyError) {
+    console.error('Error creating status history for expired session:', historyError);
+  }
+
+  console.log(`Order ${order.order_number} cancelled due to expired session`);
 }

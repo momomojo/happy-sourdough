@@ -393,7 +393,7 @@ Priority order for next steps:
 6. **Monitoring Setup** - Configure error tracking (Sentry recommended)
 7. **Rate Limiting** - Add rate limiting middleware for API routes (optional for MVP)
 
-### Security Audit Results (2025-12-10) ✅
+### Security Audit Results (2025-12-11) ✅
 
 | Route | Issue | Status | Fix Applied |
 |-------|-------|--------|-------------|
@@ -404,11 +404,37 @@ Priority order for next steps:
 | `/api/admin/orders/[id]/status` | No admin auth | ✅ Fixed | Added `isAdmin()` check |
 | `/api/admin/discounts` | Only checked user login | ✅ Fixed | Added `isAdmin()` check |
 | `/api/admin/discounts/[id]` | Only checked user login | ✅ Fixed | Added `isAdmin()` check |
+| `/admin/setup` | **CRITICAL**: Public admin creation | ✅ Fixed | Multi-layer protection (see below) |
 | `/api/webhooks/stripe` | N/A | ✅ Secure | Has signature verification |
 | `/api/admin/upload` | N/A | ✅ Secure | Has full admin verification |
 | `/api/admin/products/sync-stripe` | N/A | ✅ Secure | Has full admin verification |
 | `/api/checkout` | N/A | ✅ Secure | Validates inputs, handles rollback |
 | `/api/discounts/validate` | No rate limiting | ⏳ Low risk | Consider rate limiting for production |
+
+#### Admin Setup Security (2025-12-11) ✅
+
+**Critical vulnerability fixed**: The `/admin/setup` page was publicly accessible without verification.
+
+**Protection layers implemented**:
+1. **One-time setup check**: Server-side validation prevents creation if any admin exists
+2. **Setup key requirement**: Production requires `ADMIN_SETUP_KEY` environment variable
+3. **Global disable switch**: `DISABLE_ADMIN_SETUP=true` completely disables the page
+4. **Race condition protection**: Server action with atomic database checks
+5. **Development mode bypass**: No key required in development for easier testing
+
+**Files changed**:
+- `/src/app/admin/setup/actions.ts` - Server actions with security checks
+- `/src/app/admin/setup/page.tsx` - Updated UI with setup key field
+- `/docs/admin-setup-security.md` - Comprehensive security documentation
+- `/.env.local.example` - Added security environment variables
+
+**Environment variables added**:
+```bash
+ADMIN_SETUP_KEY=          # Required in production (optional in dev)
+DISABLE_ADMIN_SETUP=false # Set to 'true' to completely disable setup
+```
+
+**Documentation**: See `/docs/admin-setup-security.md` for full setup guide and best practices.
 
 ### Database Status
 - **Tables**: 16 tables with RLS enabled

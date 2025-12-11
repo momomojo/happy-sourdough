@@ -6,36 +6,39 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { Shield, Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Shield, Eye, EyeOff, Loader2, Check, AlertCircle, Lock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { setupFirstAdmin, isSetupAvailable } from './actions';
 
 export default function AdminSetupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [setupKey, setSetupKey] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-  const [hasAdmins, setHasAdmins] = useState(false);
+  const [setupStatus, setSetupStatus] = useState<{
+    available: boolean;
+    requiresKey: boolean;
+    isDisabled: boolean;
+  }>({
+    available: false,
+    requiresKey: false,
+    isDisabled: false,
+  });
   const router = useRouter();
 
-  // Check if admin users already exist
+  // Check if admin setup is available
   useEffect(() => {
-    async function checkAdmins() {
-      const supabase = createClient();
-      const { count, error } = await supabase
-        .from('admin_users')
-        .select('*', { count: 'exact', head: true });
-
-      if (!error) {
-        setHasAdmins((count ?? 0) > 0);
-      }
+    async function checkSetup() {
+      const status = await isSetupAvailable();
+      setSetupStatus(status);
       setIsChecking(false);
     }
-    checkAdmins();
+    checkSetup();
   }, []);
 
   const passwordRequirements = [
@@ -62,73 +65,36 @@ export default function AdminSetupPage() {
       return;
     }
 
+    if (setupStatus.requiresKey && !setupKey.trim()) {
+      toast.error('Setup key is required');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-
-      // Double-check no admins exist
-      const { count } = await supabase
-        .from('admin_users')
-        .select('*', { count: 'exact', head: true });
-
-      if ((count ?? 0) > 0) {
-        toast.error('Admin setup has already been completed');
-        router.push('/admin/login');
-        return;
-      }
-
-      // Create the auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      // Call server action to create admin
+      const result = await setupFirstAdmin(
         email,
         password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
+        fullName,
+        setupStatus.requiresKey ? setupKey : undefined
+      );
 
-      if (signUpError) {
-        toast.error(signUpError.message);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!authData.user) {
-        toast.error('Failed to create user');
-        setIsLoading(false);
-        return;
-      }
-
-      // Create the admin_users entry as super_admin
-      const { error: adminError } = await supabase
-        .from('admin_users')
-        .insert({
-          user_id: authData.user.id,
-          role: 'super_admin' as const,
-          display_name: fullName,
-          is_active: true,
-        } as never);
-
-      if (adminError) {
-        console.error('Admin insert error:', adminError);
-        toast.error('Failed to create admin user: ' + adminError.message);
-        // Clean up auth user if admin creation failed
-        await supabase.auth.signOut();
+      if (!result.success) {
+        toast.error(result.error || 'Failed to create admin account');
         setIsLoading(false);
         return;
       }
 
       toast.success('Admin account created successfully!');
 
-      // If session exists, redirect to dashboard
-      if (authData.session) {
-        router.push('/admin/dashboard');
-      } else {
-        // Email confirmation required
+      if (result.requiresEmailConfirmation) {
         toast.info('Please check your email to confirm your account');
         router.push('/admin/login?message=check-email');
+      } else {
+        // Need to sign in manually since we used server action
+        router.push('/admin/login?message=setup-complete');
       }
     } catch (error) {
       console.error('Setup error:', error);
@@ -145,7 +111,35 @@ export default function AdminSetupPage() {
     );
   }
 
-  if (hasAdmins) {
+  // Show disabled message if setup is globally disabled
+  if (setupStatus.isDisabled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+        <Card className="w-full max-w-md border-2">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+              <Lock className="h-6 w-6 text-red-600" />
+            </div>
+            <CardTitle>Setup Disabled</CardTitle>
+            <CardDescription>
+              Admin setup has been disabled by the system administrator. Please contact support for assistance.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              className="w-full"
+              onClick={() => router.push('/admin/login')}
+            >
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show already complete message if admins exist
+  if (!setupStatus.available) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
         <Card className="w-full max-w-md border-2">
@@ -193,7 +187,38 @@ export default function AdminSetupPage() {
             </AlertDescription>
           </Alert>
 
+          {setupStatus.requiresKey && (
+            <Alert className="mb-4 border-orange-200 bg-orange-50">
+              <Lock className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                A setup key is required. Contact your system administrator for the setup key.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSetup} className="space-y-4">
+            {setupStatus.requiresKey && (
+              <div className="space-y-2">
+                <Label htmlFor="setupKey" className="flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Setup Key
+                </Label>
+                <Input
+                  id="setupKey"
+                  type="password"
+                  placeholder="Enter setup key"
+                  value={setupKey}
+                  onChange={(e) => setSetupKey(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  autoComplete="off"
+                  className="border-2 border-orange-300 focus-visible:ring-orange-500"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Required for production setup. Contact your system administrator.
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <Input

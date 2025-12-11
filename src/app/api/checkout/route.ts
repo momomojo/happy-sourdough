@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createCheckoutSession } from '@/lib/stripe/server';
+import { calculateTax } from '@/lib/tax';
 import type { CheckoutFormData } from '@/types/checkout';
 import type { CartItem } from '@/contexts/cart-context';
 import type { Order, OrderItem } from '@/types/database';
@@ -65,11 +66,17 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
 
-    // Verify products exist and are available
+    // Verify products exist, are available, and fetch ACTUAL server-side prices
     const variantIds = items.map(item => item.variantId);
     const { data: variantsData, error: variantsError } = await (supabase
       .from('product_variants') as ReturnType<typeof supabase.from>)
-      .select('id, product_id, price_adjustment, is_available')
+      .select(`
+        id,
+        product_id,
+        price_adjustment,
+        is_available,
+        products!inner(base_price, is_available)
+      `)
       .in('id', variantIds);
 
     if (variantsError) {
@@ -85,10 +92,16 @@ export async function POST(request: NextRequest) {
       product_id: string;
       price_adjustment: number;
       is_available: boolean;
+      products: {
+        base_price: number;
+        is_available: boolean;
+      };
     }> | null;
 
-    // Validate all items are available
+    // Validate all items are available AND verify prices
     const unavailableItems: string[] = [];
+    const priceMismatchItems: string[] = [];
+    let serverCalculatedSubtotal = 0;
 
     items.forEach(item => {
       const variant = variants?.find(v => v.id === item.variantId);
@@ -96,10 +109,25 @@ export async function POST(request: NextRequest) {
         unavailableItems.push(item.productName);
         return;
       }
-      if (!variant.is_available) {
+      if (!variant.is_available || !variant.products.is_available) {
         unavailableItems.push(item.productName);
         return;
       }
+
+      // CRITICAL SECURITY FIX: Calculate price server-side from database
+      const serverSidePrice = variant.products.base_price + variant.price_adjustment;
+      const clientSentPrice = item.unitPrice;
+
+      // Allow 1 cent tolerance for floating point rounding
+      if (Math.abs(serverSidePrice - clientSentPrice) > 0.01) {
+        console.warn(
+          `Price mismatch for ${item.productName}: client sent $${clientSentPrice}, server calculated $${serverSidePrice}`
+        );
+        priceMismatchItems.push(item.productName);
+      }
+
+      // Use server-calculated price regardless of client input
+      serverCalculatedSubtotal += serverSidePrice * item.quantity;
     });
 
     if (unavailableItems.length > 0) {
@@ -109,10 +137,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate totals
-    const TAX_RATE = 0.08; // TODO: Make configurable
-    const taxAmount = subtotal * TAX_RATE;
-    const total = subtotal + deliveryFee + taxAmount - discountAmount;
+    if (priceMismatchItems.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Price verification failed. Please refresh your cart and try again.`,
+          details: `Mismatched items: ${priceMismatchItems.join(', ')}`
+        },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Use server-calculated subtotal, NOT client-sent value
+    const verifiedSubtotal = serverCalculatedSubtotal;
 
     // Determine delivery zone from ZIP code
     let deliveryZoneId: string | null = null;
@@ -128,6 +164,12 @@ export async function POST(request: NextRequest) {
         deliveryZoneId = zoneData.id;
       }
     }
+
+    // Calculate tax using configurable rate from business_settings
+    // Supports flat rate, by-zone, and by-distance calculations
+    // Falls back to 8% if not configured
+    const taxAmount = await calculateTax(verifiedSubtotal, deliveryZoneId);
+    const total = verifiedSubtotal + deliveryFee + taxAmount - discountAmount;
 
     // Resolve time_slot_id based on deliveryDate and deliveryWindow
     // Format: "10:00:00" from "10:00 - 12:00"
@@ -172,7 +214,7 @@ export async function POST(request: NextRequest) {
       zip: deliveryAddress.zip,
     } : null;
 
-    // Create order in database
+    // Create order in database with SERVER-VERIFIED prices
     type OrderInsert = Omit<Order, 'id' | 'order_number' | 'created_at' | 'updated_at'>;
     const orderInsert: OrderInsert & { discount_code_id?: string | null } = {
       user_id: userId,
@@ -186,7 +228,7 @@ export async function POST(request: NextRequest) {
       delivery_zone_id: deliveryZoneId,
       delivery_address: deliveryAddressJson,
       pickup_location: fulfillmentType === 'pickup' ? 'Main Bakery' : null,
-      subtotal,
+      subtotal: verifiedSubtotal, // SECURITY: Use server-calculated value
       delivery_fee: deliveryFee,
       discount_amount: discountAmount,
       discount_code_id: discountCodeId || null,
@@ -195,6 +237,7 @@ export async function POST(request: NextRequest) {
       total,
       stripe_payment_intent_id: null,
       stripe_charge_id: null,
+      stripe_checkout_session_id: null,
       payment_status: 'pending',
       notes: deliveryInstructions || null,
       internal_notes: null,
@@ -216,19 +259,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create order items with correct field names
+    // Create order items with SERVER-VERIFIED prices
     type OrderItemInsert = Omit<OrderItem, 'id' | 'created_at'>;
-    const orderItems: OrderItemInsert[] = items.map(item => ({
-      order_id: order.id,
-      product_id: item.productId,
-      product_variant_id: item.variantId,
-      product_name: item.productName,
-      variant_name: item.variantName,
-      quantity: item.quantity,
-      unit_price: item.unitPrice,
-      total_price: item.unitPrice * item.quantity,
-      special_instructions: null,
-    }));
+    const orderItems: OrderItemInsert[] = items.map(item => {
+      const variant = variants?.find(v => v.id === item.variantId);
+      if (!variant) {
+        throw new Error(`Variant ${item.variantId} not found during order item creation`);
+      }
+      // SECURITY: Calculate price from database values
+      const serverSidePrice = variant.products.base_price + variant.price_adjustment;
+
+      return {
+        order_id: order.id,
+        product_id: item.productId,
+        product_variant_id: item.variantId,
+        product_name: item.productName,
+        variant_name: item.variantName,
+        quantity: item.quantity,
+        unit_price: serverSidePrice, // SECURITY: Use server-calculated price
+        total_price: serverSidePrice * item.quantity,
+        special_instructions: null,
+      };
+    });
 
     const { error: itemsError } = await (supabase
       .from('order_items') as ReturnType<typeof supabase.from>)
@@ -318,7 +370,14 @@ export async function POST(request: NextRequest) {
     };
 
     const lineItems = items.map(item => {
+      const variant = variants?.find(v => v.id === item.variantId);
+      if (!variant) {
+        throw new Error(`Variant ${item.variantId} not found during Stripe session creation`);
+      }
+      // SECURITY: Calculate price from database values for Stripe
+      const serverSidePrice = variant.products.base_price + variant.price_adjustment;
       const absoluteImageUrl = getAbsoluteImageUrl(item.imageUrl);
+
       return {
         price_data: {
           currency: 'usd',
@@ -327,7 +386,7 @@ export async function POST(request: NextRequest) {
             description: item.productName,
             ...(absoluteImageUrl && { images: [absoluteImageUrl] }),
           },
-          unit_amount: Math.round(item.unitPrice * 100), // Convert to cents
+          unit_amount: Math.round(serverSidePrice * 100), // SECURITY: Use server price
         },
         quantity: item.quantity,
       };
@@ -354,7 +413,7 @@ export async function POST(request: NextRequest) {
         currency: 'usd',
         product_data: {
           name: 'Sales Tax',
-          description: 'California sales tax',
+          description: 'Sales tax',
         },
         unit_amount: Math.round(taxAmount * 100),
       },

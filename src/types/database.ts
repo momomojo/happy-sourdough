@@ -138,6 +138,7 @@ export interface Order {
   total: number;
   stripe_payment_intent_id: string | null;
   stripe_charge_id: string | null;
+  stripe_checkout_session_id: string | null;
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   notes: string | null;
   internal_notes: string | null;
@@ -233,21 +234,22 @@ export type AdminRole = 'super_admin' | 'admin' | 'manager' | 'staff';
 export interface AdminUser {
   id: string;
   user_id: string;
-  email: string;
-  role: AdminRole;
-  full_name: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  role: string;
+  display_name: string | null;
+  is_active: boolean | null;
+  permissions: Record<string, unknown> | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface BusinessSetting {
   id: string;
   key: string;
   value: unknown;
+  category: string;
   description: string | null;
-  created_at: string;
-  updated_at: string;
+  updated_at: string | null;
+  updated_by: string | null;
 }
 
 // Supabase Database type helper
@@ -331,8 +333,8 @@ export interface Database {
       };
       business_settings: {
         Row: BusinessSetting;
-        Insert: Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>>;
+        Insert: Omit<BusinessSetting, 'id' | 'updated_at' | 'updated_by'>;
+        Update: Partial<Omit<BusinessSetting, 'id' | 'updated_at' | 'updated_by'>>;
       };
     };
     Functions: {
@@ -351,6 +353,10 @@ export interface Database {
       get_business_setting: {
         Args: { setting_key: string };
         Returns: unknown;
+      };
+      increment_discount_usage: {
+        Args: { discount_code_id: string };
+        Returns: void;
       };
       increment_slot_orders: {
         Args: { slot_id: string };

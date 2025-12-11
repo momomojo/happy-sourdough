@@ -75,8 +75,8 @@ test.describe('Admin Panel', () => {
       // Wait for redirect to dashboard
       await page.waitForURL(/\/admin\/dashboard/, { timeout: 15000 });
 
-      // Verify dashboard loaded
-      await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
+      // Verify dashboard loaded - use exact match to avoid multiple headings
+      await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
     });
 
     test('should validate required fields', async ({ page }) => {
@@ -195,16 +195,16 @@ test.describe('Admin Panel', () => {
     });
 
     test('should logout successfully', async ({ page }) => {
-      // Open user menu
-      const userMenu = page.locator('[data-testid="user-menu"], .user-menu, button[aria-label*="user"]');
-      if (await userMenu.count() > 0) {
-        await userMenu.first().click();
-      }
+      // Open user menu - the trigger is an avatar button inside a dropdown
+      const avatarButton = page.locator('button').filter({ has: page.locator('[class*="avatar"], [class*="Avatar"]') }).first();
+      await avatarButton.click();
+
+      // Wait for dropdown menu to appear
+      await page.waitForSelector('[role="menu"]', { timeout: 5000 });
 
       // Click sign out
-      const signOutBtn = page.getByRole('menuitem', { name: /sign out|logout/i })
-        .or(page.getByRole('button', { name: /sign out|logout/i }));
-      await signOutBtn.first().click();
+      const signOutBtn = page.getByRole('menuitem', { name: /sign out/i });
+      await signOutBtn.click();
 
       // Wait for redirect to login
       await page.waitForURL(/\/admin\/login/);
@@ -431,7 +431,7 @@ test.describe('Admin Panel', () => {
 
       // Should still be logged in
       await expect(page).toHaveURL(/\/admin\/dashboard/);
-      await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
     });
   });
 
