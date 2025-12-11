@@ -208,10 +208,24 @@ test.describe('Admin Panel', () => {
       // Wait for redirect to login
       await page.waitForURL(/\/admin\/login/, { timeout: 10000 });
 
-      // Verify login page is shown (wait for load)
+      // Wait for loading spinner to disappear (page uses Loader2 component while checking setup)
+      await page.waitForSelector('.animate-spin', { state: 'hidden', timeout: 10000 }).catch(() => {
+        // Spinner might not exist if page loaded fast
+      });
+
+      // Verify login page is shown (wait for network to be idle first)
       await page.waitForLoadState('networkidle');
+
+      // Check for either login heading or setup heading
       const loginHeading = page.getByText('Admin Login', { exact: true });
       const setupHeading = page.getByText('Admin Setup Required', { exact: true });
+
+      // Wait for one of them to be visible
+      await Promise.race([
+        loginHeading.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+        setupHeading.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+      ]);
+
       const loginVisible = await loginHeading.isVisible().catch(() => false);
       const setupVisible = await setupHeading.isVisible().catch(() => false);
       expect(loginVisible || setupVisible).toBeTruthy();
