@@ -38,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${dmSans.variable} ${cormorant.variable}`}>
-      <body className="font-body antialiased">
+    <html lang="en" className={`${fraunces.variable} ${dmSans.variable} ${cormorant.variable}`} suppressHydrationWarning>
+      <body className="font-body antialiased" suppressHydrationWarning>
         <CartProvider>
           {children}
           <Toaster />
