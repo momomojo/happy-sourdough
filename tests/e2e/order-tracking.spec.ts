@@ -194,9 +194,7 @@ test.describe('Order Tracking - Mobile', () => {
 });
 
 test.describe('Order Tracking - With Test Order', () => {
-  // These tests require a seeded test order in the database
-  // Skip if no test orders are available
-  test.skip(true, 'Requires seeded test orders - enable when test data is available');
+  // Test order HS-2024-001 with email test@happysourdough.com has been seeded in the database
 
   test('should display order details for valid order', async ({ page }) => {
     await page.goto('/track');
@@ -210,16 +208,16 @@ test.describe('Order Tracking - With Test Order', () => {
     await page.getByLabel(/email/i).fill(testEmail);
     await page.getByRole('button', { name: /track order/i }).click();
 
-    // Wait for order details to load
-    await expect(page.getByText(/order tracking/i)).toBeVisible({ timeout: 10000 });
+    // Wait for order details to load - look for the "Order Tracking" heading
+    await expect(page.getByRole('heading', { name: /order tracking/i, level: 2 })).toBeVisible({ timeout: 10000 });
 
-    // Check order details are displayed
-    await expect(page.getByText(testOrderNumber)).toBeVisible();
+    // Check order number is displayed (use .first() since it appears multiple times on page)
+    await expect(page.getByText(testOrderNumber).first()).toBeVisible();
 
-    // Check for status tracker
-    await expect(page.locator('[data-testid="order-status-tracker"]').or(
-      page.getByText(/received|confirmed|baking|ready|delivered/i).first()
-    )).toBeVisible();
+    // Check for status tracker - look for "Order Status" heading and status steps
+    await expect(page.getByRole('heading', { name: /order status/i, level: 2 })).toBeVisible();
+    // Verify at least one status step is visible (Order Received, Confirmed, Baking, etc.)
+    await expect(page.getByRole('heading', { name: /order received/i, level: 3 })).toBeVisible();
 
     // Check for "Track Another Order" button
     await expect(page.getByRole('button', { name: /track another order/i })).toBeVisible();
@@ -235,13 +233,12 @@ test.describe('Order Tracking - With Test Order', () => {
     await page.getByRole('button', { name: /track order/i }).click();
 
     // Wait for order details
-    await expect(page.getByText(/order tracking/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /order tracking/i, level: 2 })).toBeVisible({ timeout: 10000 });
 
-    // Check for order items
-    const orderDetails = page.locator('[data-testid="order-details"]').or(
-      page.locator('.order-details')
-    );
-    await expect(orderDetails).toBeVisible();
+    // Check for order items section - look for "Order Items" text and product name
+    await expect(page.getByText(/order items/i)).toBeVisible();
+    // Verify the test order item is displayed (Classic Sourdough Loaf)
+    await expect(page.getByRole('heading', { name: /classic sourdough loaf/i, level: 4 })).toBeVisible();
   });
 
   test('should allow tracking another order after viewing one', async ({ page }) => {
@@ -254,7 +251,7 @@ test.describe('Order Tracking - With Test Order', () => {
     await page.getByRole('button', { name: /track order/i }).click();
 
     // Wait for order details
-    await expect(page.getByText(/order tracking/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /order tracking/i, level: 2 })).toBeVisible({ timeout: 10000 });
 
     // Click "Track Another Order"
     await page.getByRole('button', { name: /track another order/i }).click();
