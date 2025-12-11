@@ -1,5 +1,63 @@
 import Stripe from 'stripe';
 
+// Custom HTTP client using fetch for Vercel serverless compatibility
+class FetchHttpClient implements Stripe.HttpClient {
+  getClientName(): string {
+    return 'fetch';
+  }
+
+  async makeRequest(
+    host: string,
+    port: string,
+    path: string,
+    method: string,
+    headers: Record<string, string>,
+    requestData: string | null,
+    protocol: string,
+    timeout: number
+  ): Promise<Stripe.HttpClientResponse> {
+    const url = `${protocol}://${host}${port ? `:${port}` : ''}${path}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: requestData || undefined,
+        signal: controller.signal,
+      });
+
+      const responseText = await response.text();
+
+      return {
+        getStatusCode: () => response.status,
+        getHeaders: () => {
+          const headersObj: Record<string, string> = {};
+          response.headers.forEach((value, key) => {
+            headersObj[key.toLowerCase()] = value;
+          });
+          return headersObj;
+        },
+        getRawResponse: () => response,
+        toStream: () => {
+          throw new Error('Streaming not supported');
+        },
+        toJSON: () => {
+          try {
+            return JSON.parse(responseText);
+          } catch {
+            return null;
+          }
+        },
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 // Create a fresh Stripe client for each request to avoid cold start issues on serverless
 function createStripeClient(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -11,10 +69,8 @@ function createStripeClient(): Stripe {
     // Use shorter timeout for serverless environment
     timeout: 20000,
     maxNetworkRetries: 3,
-    // Explicitly set the host to ensure proper connection
-    host: 'api.stripe.com',
-    protocol: 'https',
     telemetry: false, // Disable telemetry to reduce overhead
+    httpClient: new FetchHttpClient(),
   });
 }
 
