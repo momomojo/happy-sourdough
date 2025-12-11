@@ -304,18 +304,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe checkout session
-    const lineItems = items.map(item => ({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: `${item.productName} - ${item.variantName}`,
-          description: item.productName,
-          ...(item.imageUrl && { images: [item.imageUrl] }),
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
+
+    // Helper to ensure image URL is absolute
+    const getAbsoluteImageUrl = (imageUrl: string | undefined): string | undefined => {
+      if (!imageUrl) return undefined;
+      // If already absolute, return as-is
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return imageUrl;
+      }
+      // Convert relative URL to absolute
+      return `${appUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+    };
+
+    const lineItems = items.map(item => {
+      const absoluteImageUrl = getAbsoluteImageUrl(item.imageUrl);
+      return {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${item.productName} - ${item.variantName}`,
+            description: item.productName,
+            ...(absoluteImageUrl && { images: [absoluteImageUrl] }),
+          },
+          unit_amount: Math.round(item.unitPrice * 100), // Convert to cents
         },
-        unit_amount: Math.round(item.unitPrice * 100), // Convert to cents
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
 
     // Add delivery fee as line item if applicable
     if (deliveryFee > 0) {
@@ -344,8 +360,6 @@ export async function POST(request: NextRequest) {
       },
       quantity: 1,
     });
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     let session;
     try {
