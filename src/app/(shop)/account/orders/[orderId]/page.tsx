@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getOrderById } from '@/lib/supabase/orders';
 import { OrderStatusTracker } from '@/components/order/order-status-tracker';
 import { OrderDetails } from '@/components/order/order-details';
+import { CancelOrderButton } from '@/components/order/cancel-order-button';
 import { Button } from '@/components/ui/button';
 import { ReorderButton } from '@/components/order/reorder-button';
 
@@ -92,9 +93,28 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         </div>
       </div>
 
-      {/* Actions Section */}
+      {/* Cancel Order Section - Only show for cancellable orders */}
+      {(order.status === 'received' || order.status === 'confirmed') && (
+        <div className="mt-8 rounded-xl border-2 border-destructive/20 bg-gradient-to-r from-destructive/5 to-destructive/10 p-6 shadow-md">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="mb-2 font-bold text-lg">Need to Cancel?</h3>
+              <p className="text-sm text-muted-foreground">
+                You can cancel your order before we start baking. Once baking begins, cancellation is no longer possible.
+              </p>
+            </div>
+            <CancelOrderButton
+              orderId={order.id}
+              orderNumber={order.order_number}
+              status={order.status}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Reorder Section */}
       {canReorder && (
-        <div className="mt-8 rounded-xl border-2 bg-gradient-to-r from-accent/5 to-secondary/5 p-6 shadow-md">
+        <div className="mt-6 rounded-xl border-2 bg-gradient-to-r from-accent/5 to-secondary/5 p-6 shadow-md">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h3 className="mb-2 font-bold text-lg">Love what you ordered?</h3>

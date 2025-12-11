@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/components/ui/button';
 
 export default function ProductsError({
@@ -11,6 +12,12 @@ export default function ProductsError({
     reset: () => void;
 }) {
     useEffect(() => {
+        // Log to Sentry
+        Sentry.captureException(error, {
+            tags: { location: 'products-error-boundary' },
+            extra: { digest: error.digest }
+        });
+        // Also log to console for local debugging
         console.error(error);
     }, [error]);
 
