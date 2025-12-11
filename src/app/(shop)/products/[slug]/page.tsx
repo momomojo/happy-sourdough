@@ -23,36 +23,71 @@ export async function generateStaticParams() {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  try {
+    const { slug } = await params;
+    const product = await getProductBySlug(slug);
 
-  if (!product) {
+    if (!product) {
+      return {
+        title: 'Product Not Found',
+      };
+    }
+
     return {
-      title: 'Product Not Found',
+      title: `${product.name} | Happy Sourdough Bakery`,
+      description: product.description || `Order fresh ${product.name} from Happy Sourdough Bakery`,
+      openGraph: {
+        title: product.name,
+        description: product.description || undefined,
+        images: product.image_url ? [product.image_url] : undefined,
+      },
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: 'Happy Sourdough Bakery',
     };
   }
-
-  return {
-    title: `${product.name} | Happy Sourdough Bakery`,
-    description: product.description || `Order fresh ${product.name} from Happy Sourdough Bakery`,
-    openGraph: {
-      title: product.name,
-      description: product.description || undefined,
-      images: product.image_url ? [product.image_url] : undefined,
-    },
-  };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  let slug: string;
+  let product;
+  let variants;
+  let relatedProducts;
+
+  try {
+    const resolvedParams = await params;
+    slug = resolvedParams.slug;
+  } catch (error) {
+    console.error('Error resolving params:', error);
+    throw new Error(`Failed to resolve params: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  try {
+    product = await getProductBySlug(slug);
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    throw new Error(`Failed to fetch product "${slug}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 
   if (!product) {
     notFound();
   }
 
-  const variants = await getProductVariants(product.id);
-  const relatedProducts = await getProductsByCategory(product.category, 4);
+  try {
+    variants = await getProductVariants(product.id);
+  } catch (error) {
+    console.error('Error fetching variants:', error);
+    variants = [];
+  }
+
+  try {
+    relatedProducts = await getProductsByCategory(product.category, 4);
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    relatedProducts = [];
+  }
 
   // Prepare gallery images
   const galleryImages = product.image_url
