@@ -56,6 +56,7 @@ async function stripeApiCall<T>(
   const data = await response.json();
 
   if (!response.ok) {
+    console.error('Stripe API error:', JSON.stringify(data.error, null, 2));
     const error = new Error(data.error?.message || 'Stripe API error');
     (error as Error & { type: string; code: string }).type = data.error?.type;
     (error as Error & { type: string; code: string }).code = data.error?.code;
