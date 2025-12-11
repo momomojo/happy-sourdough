@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 export async function GET() {
   const envCheck = {
@@ -21,5 +22,41 @@ export async function GET() {
     VERCEL: process.env.VERCEL,
   };
 
-  return NextResponse.json(envCheck);
+  // Test Supabase connection
+  let supabaseTest: { success: boolean; error?: string; productCount?: number } = { success: false };
+
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (supabaseUrl && supabaseAnonKey) {
+      const supabase = createServerClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          cookies: {
+            getAll() { return []; },
+            setAll() {},
+          },
+        }
+      );
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, slug')
+        .limit(5);
+
+      if (error) {
+        supabaseTest = { success: false, error: error.message };
+      } else {
+        supabaseTest = { success: true, productCount: data?.length || 0 };
+      }
+    } else {
+      supabaseTest = { success: false, error: 'Missing environment variables' };
+    }
+  } catch (err) {
+    supabaseTest = { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+
+  return NextResponse.json({ ...envCheck, supabaseTest });
 }
