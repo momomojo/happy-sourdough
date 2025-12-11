@@ -1,4 +1,4 @@
-import { createClient } from './server';
+import { createReadOnlyClient } from './server';
 import type { Product, ProductVariant } from '@/types/database';
 
 export type ProductWithVariants = Product & {
@@ -14,7 +14,7 @@ type ProductQueryRow = Product & { variants: ProductVariant[] | null };
  * @returns Array of products with variants
  */
 export async function getProducts(category?: string): Promise<ProductWithVariants[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   let query = supabase
     .from('products')
@@ -51,7 +51,7 @@ export async function getProducts(category?: string): Promise<ProductWithVariant
  * Get a product by its slug with all details
  */
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('products')
@@ -72,7 +72,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
  * Get variants for a specific product
  */
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('product_variants')
@@ -112,7 +112,7 @@ export function formatPrice(price: number): string {
  * Get all available delivery zones
  */
 export async function getDeliveryZones() {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
   const { data, error } = await supabase
     .from('delivery_zones')
     .select('*')
@@ -132,7 +132,7 @@ export async function getDeliveryZones() {
  * Used for "Related Products" section
  */
 export async function getProductsByCategory(category: string, limit: number = 4): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('products')
@@ -153,7 +153,7 @@ export async function getProductsByCategory(category: string, limit: number = 4)
  * Get all product slugs for static generation
  */
 export async function getAllProductSlugs(): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('products')
@@ -172,7 +172,7 @@ export async function getAllProductSlugs(): Promise<string[]> {
  * Search products by name or description
  */
 export async function searchProducts(query: string): Promise<ProductWithVariants[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('products')
@@ -205,7 +205,7 @@ export async function searchProducts(query: string): Promise<ProductWithVariants
  * @returns Array of featured products with variants
  */
 export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariants[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('products')
@@ -239,7 +239,7 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
  * @returns Array of category strings
  */
 export async function getCategories(): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = createReadOnlyClient();
 
   const { data, error } = await supabase
     .from('products')

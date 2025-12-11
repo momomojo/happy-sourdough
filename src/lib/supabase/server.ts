@@ -2,6 +2,35 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database';
 
+/**
+ * Create a read-only Supabase client that doesn't require cookies.
+ * Use this for fetching public data like products.
+ * This avoids issues with cookies() in certain rendering contexts.
+ */
+export function createReadOnlyClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  }
+
+  return createServerClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      cookies: {
+        getAll() {
+          return [];
+        },
+        setAll() {
+          // No-op for read-only client
+        },
+      },
+    }
+  );
+}
+
 export async function createClient() {
   const cookieStore = await cookies();
 
