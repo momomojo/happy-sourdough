@@ -15,10 +15,12 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Force dynamic rendering to avoid cookies() issues with static generation
+export const dynamic = 'force-dynamic';
+
 // Generate static params for all products
 export async function generateStaticParams() {
-  // Return empty array to force dynamic rendering
-  // This avoids the issue with cookies in build time
+  // Return empty array - combined with dynamic='force-dynamic' above
   return [];
 }
 

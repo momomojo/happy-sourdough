@@ -436,9 +436,26 @@ DISABLE_ADMIN_SETUP=false # Set to 'true' to completely disable setup
 
 **Documentation**: See `/docs/admin-setup-security.md` for full setup guide and best practices.
 
+#### Database Security Advisors (2025-12-11) ✅
+
+**Function Search Path Security**: All 7 mutable search_path warnings fixed via migration 017:
+- `decrement_discount_usage()` - trigger function
+- `increment_discount_usage()` - trigger function
+- `increment_slot_orders()` - trigger function
+- `trigger_decrement_inventory_on_confirmation()` - trigger function
+- `decrement_inventory_for_order()` - SECURITY DEFINER function
+- `validate_inventory()` - SECURITY DEFINER function
+- `restore_inventory_for_order()` - SECURITY DEFINER function
+
+**Leaked Password Protection**: Requires Pro Plan and Dashboard configuration
+- Go to Supabase Dashboard → Project Settings → Auth → Bot and Abuse Protection
+- Enable "Prevent use of leaked passwords" toggle
+- This uses HaveIBeenPwned API to reject known compromised passwords
+- **Note**: This is a Pro Plan feature and must be enabled manually in the Dashboard
+
 ### Database Status
 - **Tables**: 16 tables with RLS enabled
-- **Migrations Applied**: 10 migrations (001-010)
+- **Migrations Applied**: 17 migrations (001-017)
 - **Seed Data**: Products, variants, delivery zones, time slots, discount codes
 
 ### Admin Dashboard Testing (2025-12-10) ✅

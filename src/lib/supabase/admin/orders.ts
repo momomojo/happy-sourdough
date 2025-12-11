@@ -82,7 +82,7 @@ export async function getOrders(
 
   if (error) {
     console.error('Error fetching orders:', error);
-    throw new Error('Failed to fetch orders');
+    throw new Error(`Failed to fetch orders: ${error.message || error.code || 'Unknown error'}`);
   }
 
   // Get customer info for orders with user_id
@@ -265,7 +265,7 @@ export async function getOrderStats(filters: OrderFilters = {}): Promise<OrderSt
 
   if (error) {
     console.error('Error fetching order stats:', error);
-    throw new Error('Failed to fetch order stats');
+    throw new Error(`Failed to fetch order stats: ${error.message || error.code || 'Unknown error'}`);
   }
 
   // Count by status

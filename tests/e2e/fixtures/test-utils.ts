@@ -54,3 +54,19 @@ export async function openCartSheet(page: Page): Promise<void> {
   await page.locator('[data-testid="cart-button"]').click();
   await page.waitForTimeout(500);
 }
+
+/**
+ * Opens the admin sidebar on mobile devices
+ * On mobile, the sidebar is hidden behind a hamburger menu button
+ */
+export async function openAdminSidebar(page: Page, isMobile: boolean): Promise<void> {
+  if (!isMobile) return;
+
+  // On mobile, there's a hamburger button to open the sidebar
+  // It's usually the first button without specific aria-label
+  const sidebarToggle = page.locator('button').first();
+  if (await sidebarToggle.count() > 0) {
+    await sidebarToggle.click();
+    await page.waitForTimeout(300); // Wait for sidebar animation
+  }
+}

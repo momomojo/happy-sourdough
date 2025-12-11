@@ -247,8 +247,9 @@ export interface BusinessSetting {
   key: string;
   value: unknown;
   description: string | null;
-  created_at: string;
-  updated_at: string;
+  category: string;
+  updated_at: string | null;
+  updated_by: string | null;
 }
 
 // Supabase Database type helper
