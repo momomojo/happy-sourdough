@@ -1,4 +1,11 @@
-import { stripe } from './server';
+import {
+  createStripeProduct,
+  updateStripeProduct,
+  createStripePrice,
+  updateStripePrice,
+  retrieveStripePrice,
+  listStripeProducts,
+} from './server';
 import type Stripe from 'stripe';
 
 /**
@@ -26,7 +33,7 @@ export async function syncProductToStripe({
   // Create or update the Stripe product
   if (stripeProductId) {
     // Update existing product
-    product = await stripe.products.update(stripeProductId, {
+    product = await updateStripeProduct(stripeProductId, {
       name,
       description: description || undefined,
       images: imageUrl ? [imageUrl] : undefined,
@@ -36,7 +43,7 @@ export async function syncProductToStripe({
     });
   } else {
     // Create new product
-    product = await stripe.products.create({
+    product = await createStripeProduct({
       name,
       description: description || undefined,
       images: imageUrl ? [imageUrl] : undefined,
@@ -51,14 +58,14 @@ export async function syncProductToStripe({
 
   if (stripePriceId) {
     // Check if price changed
-    const existingPrice = await stripe.prices.retrieve(stripePriceId);
+    const existingPrice = await retrieveStripePrice(stripePriceId);
     const newAmountCents = Math.round(basePrice * 100);
 
     if (existingPrice.unit_amount !== newAmountCents) {
       // Archive old price and create new one
-      await stripe.prices.update(stripePriceId, { active: false });
+      await updateStripePrice(stripePriceId, { active: false });
 
-      const newPrice = await stripe.prices.create({
+      const newPrice = await createStripePrice({
         product: product.id,
         unit_amount: newAmountCents,
         currency: 'usd',
@@ -69,13 +76,13 @@ export async function syncProductToStripe({
       priceId = newPrice.id;
 
       // Set as default price
-      await stripe.products.update(product.id, {
+      await updateStripeProduct(product.id, {
         default_price: newPrice.id,
       });
     }
   } else {
     // Create new price
-    const newPrice = await stripe.prices.create({
+    const newPrice = await createStripePrice({
       product: product.id,
       unit_amount: Math.round(basePrice * 100),
       currency: 'usd',
@@ -86,7 +93,7 @@ export async function syncProductToStripe({
     priceId = newPrice.id;
 
     // Set as default price
-    await stripe.products.update(product.id, {
+    await updateStripeProduct(product.id, {
       default_price: newPrice.id,
     });
   }
@@ -117,13 +124,13 @@ export async function syncVariantPriceToStripe({
 
   if (stripePriceId) {
     // Check if price changed
-    const existingPrice = await stripe.prices.retrieve(stripePriceId);
+    const existingPrice = await retrieveStripePrice(stripePriceId);
 
     if (existingPrice.unit_amount !== amountCents) {
       // Archive old price and create new one
-      await stripe.prices.update(stripePriceId, { active: false });
+      await updateStripePrice(stripePriceId, { active: false });
 
-      const newPrice = await stripe.prices.create({
+      const newPrice = await createStripePrice({
         product: stripeProductId,
         unit_amount: amountCents,
         currency: 'usd',
@@ -139,7 +146,7 @@ export async function syncVariantPriceToStripe({
   }
 
   // Create new price for variant
-  const newPrice = await stripe.prices.create({
+  const newPrice = await createStripePrice({
     product: stripeProductId,
     unit_amount: amountCents,
     currency: 'usd',
@@ -157,7 +164,7 @@ export async function syncVariantPriceToStripe({
  * Archive a Stripe product (set to inactive)
  */
 export async function archiveStripeProduct(stripeProductId: string): Promise<void> {
-  await stripe.products.update(stripeProductId, {
+  await updateStripeProduct(stripeProductId, {
     active: false,
   });
 }
@@ -166,7 +173,7 @@ export async function archiveStripeProduct(stripeProductId: string): Promise<voi
  * Archive a Stripe price (set to inactive)
  */
 export async function archiveStripePrice(stripePriceId: string): Promise<void> {
-  await stripe.prices.update(stripePriceId, {
+  await updateStripePrice(stripePriceId, {
     active: false,
   });
 }
@@ -175,13 +182,12 @@ export async function archiveStripePrice(stripePriceId: string): Promise<void> {
  * Get all Stripe products with prices
  */
 export async function getStripeProducts(): Promise<Stripe.Product[]> {
-  const products = await stripe.products.list({
+  const response = await listStripeProducts({
     active: true,
     limit: 100,
-    expand: ['data.default_price'],
   });
 
-  return products.data;
+  return response.data;
 }
 
 /**

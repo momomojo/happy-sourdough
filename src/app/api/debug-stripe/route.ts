@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getStripeClient } from '@/lib/stripe/server';
 
 export const maxDuration = 30;
 
@@ -29,8 +28,8 @@ export async function GET() {
     },
   };
 
-  // Test using raw fetch
-  let rawFetchTest: { success: boolean; error?: string; mode?: string; durationMs?: number } = { success: false };
+  // Test using raw fetch (this is what we now use for all Stripe API calls)
+  let fetchApiTest: { success: boolean; error?: string; mode?: string; durationMs?: number; productCount?: number } = { success: false };
 
   try {
     if (process.env.STRIPE_SECRET_KEY) {
@@ -49,48 +48,25 @@ export async function GET() {
 
       if (response.ok) {
         const mode = key.startsWith('sk_live_') ? 'live' : 'test';
-        rawFetchTest = {
+        fetchApiTest = {
           success: true,
           mode,
+          productCount: data.data?.length || 0,
           durationMs: Date.now() - fetchStart,
         };
       } else {
-        rawFetchTest = {
+        fetchApiTest = {
           success: false,
           error: data.error?.message || 'Unknown error',
           durationMs: Date.now() - fetchStart,
         };
       }
     } else {
-      rawFetchTest = { success: false, error: 'STRIPE_SECRET_KEY not set' };
+      fetchApiTest = { success: false, error: 'STRIPE_SECRET_KEY not set' };
     }
   } catch (err) {
     const error = err instanceof Error ? err : new Error('Unknown error');
-    rawFetchTest = {
-      success: false,
-      error: error.message,
-      durationMs: Date.now() - startTime,
-    };
-  }
-
-  // Test using Stripe SDK
-  let sdkTest: { success: boolean; error?: string; mode?: string; durationMs?: number; productCount?: number } = { success: false };
-
-  try {
-    const sdkStart = Date.now();
-    const client = getStripeClient();
-    const products = await client.products.list({ limit: 1 });
-    const mode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_') ? 'live' : 'test';
-
-    sdkTest = {
-      success: true,
-      mode,
-      productCount: products.data.length,
-      durationMs: Date.now() - sdkStart,
-    };
-  } catch (err) {
-    const error = err instanceof Error ? err : new Error('Unknown error');
-    sdkTest = {
+    fetchApiTest = {
       success: false,
       error: error.message,
       durationMs: Date.now() - startTime,
@@ -99,8 +75,8 @@ export async function GET() {
 
   return NextResponse.json({
     ...stripeCheck,
-    rawFetchTest,
-    sdkTest,
+    fetchApiTest,
+    note: 'Using fetch-based Stripe API (bypassing SDK)',
     totalDurationMs: Date.now() - startTime,
   });
 }
