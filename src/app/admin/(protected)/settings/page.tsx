@@ -21,6 +21,9 @@ import {
   Loader2,
   Save,
   RefreshCw,
+  Mail,
+  Globe,
+  Palette,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -61,6 +64,32 @@ interface BusinessSettings {
     email_order_confirmation: boolean;
     email_status_updates: boolean;
     email_delivery_reminders: boolean;
+  };
+  email_templates: {
+    confirmation_header: string;
+    confirmation_footer: string;
+    status_update_header: string;
+    ready_for_pickup_message: string;
+    out_for_delivery_message: string;
+  };
+  website_content: {
+    hero_headline: string;
+    hero_subheadline: string;
+    hero_cta_text: string;
+    about_text: string;
+    tagline: string;
+  };
+  social_links: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+    tiktok: string;
+    yelp: string;
+  };
+  branding: {
+    primary_color: string;
+    accent_color: string;
+    logo_url: string;
   };
 }
 
@@ -107,6 +136,32 @@ const defaultSettings: BusinessSettings = {
     email_order_confirmation: true,
     email_status_updates: true,
     email_delivery_reminders: true,
+  },
+  email_templates: {
+    confirmation_header: 'Thank you for your order!',
+    confirmation_footer: 'Questions? Reply to this email or call us at {phone}.',
+    status_update_header: 'Your order status has been updated',
+    ready_for_pickup_message: 'Your order is ready! Please pick it up during our business hours.',
+    out_for_delivery_message: 'Your order is on its way! Our driver will arrive within the estimated window.',
+  },
+  website_content: {
+    hero_headline: 'Artisan Sourdough, Baked Fresh Daily',
+    hero_subheadline: 'Handcrafted breads and pastries made with love and traditional techniques',
+    hero_cta_text: 'Order Now',
+    about_text: 'We are a local artisan bakery specializing in handcrafted sourdough bread and pastries.',
+    tagline: 'Fresh from our oven to your table',
+  },
+  social_links: {
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    tiktok: '',
+    yelp: '',
+  },
+  branding: {
+    primary_color: '#8B4513',
+    accent_color: '#D4A574',
+    logo_url: '',
   },
 };
 
@@ -203,10 +258,18 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid grid-cols-3 lg:grid-cols-6 h-auto gap-2">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-2">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Business</span>
+          </TabsTrigger>
+          <TabsTrigger value="branding" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">Branding</span>
+          </TabsTrigger>
+          <TabsTrigger value="website" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">Website</span>
           </TabsTrigger>
           <TabsTrigger value="tax" className="flex items-center gap-2">
             <Receipt className="h-4 w-4" />
@@ -223,6 +286,10 @@ export default function SettingsPage() {
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
             <span className="hidden sm:inline">Orders</span>
+          </TabsTrigger>
+          <TabsTrigger value="emails" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            <span className="hidden sm:inline">Emails</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -294,6 +361,262 @@ export default function SettingsPage() {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Branding */}
+        <TabsContent value="branding">
+          <Card>
+            <CardHeader>
+              <CardTitle>Branding & Colors</CardTitle>
+              <CardDescription>
+                Customize your brand appearance across the website
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="primary_color">Primary Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="primary_color"
+                      type="color"
+                      value={settings.branding.primary_color}
+                      onChange={(e) =>
+                        updateSetting('branding', { ...settings.branding, primary_color: e.target.value })
+                      }
+                      className="w-16 h-10 p-1"
+                    />
+                    <Input
+                      value={settings.branding.primary_color}
+                      onChange={(e) =>
+                        updateSetting('branding', { ...settings.branding, primary_color: e.target.value })
+                      }
+                      placeholder="#8B4513"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accent_color">Accent Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="accent_color"
+                      type="color"
+                      value={settings.branding.accent_color}
+                      onChange={(e) =>
+                        updateSetting('branding', { ...settings.branding, accent_color: e.target.value })
+                      }
+                      className="w-16 h-10 p-1"
+                    />
+                    <Input
+                      value={settings.branding.accent_color}
+                      onChange={(e) =>
+                        updateSetting('branding', { ...settings.branding, accent_color: e.target.value })
+                      }
+                      placeholder="#D4A574"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="logo_url">Logo URL</Label>
+                <Input
+                  id="logo_url"
+                  value={settings.branding.logo_url}
+                  onChange={(e) =>
+                    updateSetting('branding', { ...settings.branding, logo_url: e.target.value })
+                  }
+                  placeholder="https://example.com/logo.png"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter the URL of your logo image (recommended: 200x200px PNG)
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <h4 className="font-medium mb-2">Preview</h4>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: settings.branding.primary_color }}
+                  >
+                    HS
+                  </div>
+                  <div
+                    className="w-16 h-16 rounded-lg"
+                    style={{ backgroundColor: settings.branding.accent_color }}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={() => saveSetting('branding', settings.branding)}
+                disabled={isSaving}
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Branding
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Website Content */}
+        <TabsContent value="website">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Homepage Hero Section</CardTitle>
+                <CardDescription>
+                  Customize the main headline and call-to-action on your homepage
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hero_headline">Hero Headline</Label>
+                  <Input
+                    id="hero_headline"
+                    value={settings.website_content.hero_headline}
+                    onChange={(e) =>
+                      updateSetting('website_content', { ...settings.website_content, hero_headline: e.target.value })
+                    }
+                    placeholder="Artisan Sourdough, Baked Fresh Daily"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hero_subheadline">Hero Subheadline</Label>
+                  <Textarea
+                    id="hero_subheadline"
+                    value={settings.website_content.hero_subheadline}
+                    onChange={(e) =>
+                      updateSetting('website_content', { ...settings.website_content, hero_subheadline: e.target.value })
+                    }
+                    placeholder="Handcrafted breads and pastries..."
+                    rows={2}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hero_cta_text">Button Text</Label>
+                    <Input
+                      id="hero_cta_text"
+                      value={settings.website_content.hero_cta_text}
+                      onChange={(e) =>
+                        updateSetting('website_content', { ...settings.website_content, hero_cta_text: e.target.value })
+                      }
+                      placeholder="Order Now"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tagline">Tagline</Label>
+                    <Input
+                      id="tagline"
+                      value={settings.website_content.tagline}
+                      onChange={(e) =>
+                        updateSetting('website_content', { ...settings.website_content, tagline: e.target.value })
+                      }
+                      placeholder="Fresh from our oven to your table"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="about_text">About Section</Label>
+                  <Textarea
+                    id="about_text"
+                    value={settings.website_content.about_text}
+                    onChange={(e) =>
+                      updateSetting('website_content', { ...settings.website_content, about_text: e.target.value })
+                    }
+                    placeholder="We are a local artisan bakery..."
+                    rows={4}
+                  />
+                </div>
+                <Button
+                  onClick={() => saveSetting('website_content', settings.website_content)}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Website Content
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Social Media Links</CardTitle>
+                <CardDescription>
+                  Add your social media profiles to show in the footer
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="instagram">Instagram</Label>
+                    <Input
+                      id="instagram"
+                      value={settings.social_links.instagram}
+                      onChange={(e) =>
+                        updateSetting('social_links', { ...settings.social_links, instagram: e.target.value })
+                      }
+                      placeholder="https://instagram.com/yourbakery"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="facebook">Facebook</Label>
+                    <Input
+                      id="facebook"
+                      value={settings.social_links.facebook}
+                      onChange={(e) =>
+                        updateSetting('social_links', { ...settings.social_links, facebook: e.target.value })
+                      }
+                      placeholder="https://facebook.com/yourbakery"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="twitter">Twitter/X</Label>
+                    <Input
+                      id="twitter"
+                      value={settings.social_links.twitter}
+                      onChange={(e) =>
+                        updateSetting('social_links', { ...settings.social_links, twitter: e.target.value })
+                      }
+                      placeholder="https://twitter.com/yourbakery"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tiktok">TikTok</Label>
+                    <Input
+                      id="tiktok"
+                      value={settings.social_links.tiktok}
+                      onChange={(e) =>
+                        updateSetting('social_links', { ...settings.social_links, tiktok: e.target.value })
+                      }
+                      placeholder="https://tiktok.com/@yourbakery"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="yelp">Yelp</Label>
+                  <Input
+                    id="yelp"
+                    value={settings.social_links.yelp}
+                    onChange={(e) =>
+                      updateSetting('social_links', { ...settings.social_links, yelp: e.target.value })
+                    }
+                    placeholder="https://yelp.com/biz/yourbakery"
+                  />
+                </div>
+                <Button
+                  onClick={() => saveSetting('social_links', settings.social_links)}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Social Links
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Tax Settings */}
@@ -695,6 +1018,114 @@ export default function SettingsPage() {
               >
                 {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Order Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Email Templates */}
+        <TabsContent value="emails">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Templates</CardTitle>
+              <CardDescription>
+                Customize the messages in your order emails. Use {'{phone}'} to insert your business phone number.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="confirmation_header">Order Confirmation - Header Message</Label>
+                <Textarea
+                  id="confirmation_header"
+                  value={settings.email_templates.confirmation_header}
+                  onChange={(e) =>
+                    updateSetting('email_templates', {
+                      ...settings.email_templates,
+                      confirmation_header: e.target.value,
+                    })
+                  }
+                  placeholder="Thank you for your order!"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmation_footer">Order Confirmation - Footer Message</Label>
+                <Textarea
+                  id="confirmation_footer"
+                  value={settings.email_templates.confirmation_footer}
+                  onChange={(e) =>
+                    updateSetting('email_templates', {
+                      ...settings.email_templates,
+                      confirmation_footer: e.target.value,
+                    })
+                  }
+                  placeholder="Questions? Reply to this email or call us at {phone}."
+                  rows={2}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Tip: Use {'{phone}'} to automatically insert your phone number
+                </p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="status_update_header">Status Update - Header Message</Label>
+                <Textarea
+                  id="status_update_header"
+                  value={settings.email_templates.status_update_header}
+                  onChange={(e) =>
+                    updateSetting('email_templates', {
+                      ...settings.email_templates,
+                      status_update_header: e.target.value,
+                    })
+                  }
+                  placeholder="Your order status has been updated"
+                  rows={2}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="ready_for_pickup_message">Ready for Pickup - Custom Message</Label>
+                <Textarea
+                  id="ready_for_pickup_message"
+                  value={settings.email_templates.ready_for_pickup_message}
+                  onChange={(e) =>
+                    updateSetting('email_templates', {
+                      ...settings.email_templates,
+                      ready_for_pickup_message: e.target.value,
+                    })
+                  }
+                  placeholder="Your order is ready! Please pick it up during our business hours."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="out_for_delivery_message">Out for Delivery - Custom Message</Label>
+                <Textarea
+                  id="out_for_delivery_message"
+                  value={settings.email_templates.out_for_delivery_message}
+                  onChange={(e) =>
+                    updateSetting('email_templates', {
+                      ...settings.email_templates,
+                      out_for_delivery_message: e.target.value,
+                    })
+                  }
+                  placeholder="Your order is on its way! Our driver will arrive within the estimated window."
+                  rows={2}
+                />
+              </div>
+
+              <Button
+                onClick={() => saveSetting('email_templates', settings.email_templates)}
+                disabled={isSaving}
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Email Templates
               </Button>
             </CardContent>
           </Card>
