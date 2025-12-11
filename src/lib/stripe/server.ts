@@ -1,7 +1,8 @@
 import Stripe from 'stripe';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  typescript: true,
+  timeout: 30000, // 30 second timeout
+  maxNetworkRetries: 2, // Retry twice on network errors
 });
 
 /**
