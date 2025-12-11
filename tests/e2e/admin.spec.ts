@@ -181,7 +181,7 @@ test.describe('Admin Panel', () => {
       await page.waitForURL(/\/admin\/zones/);
 
       // Verify zones page loaded
-      await expect(page.getByRole('heading', { name: /zones|delivery zones/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: /delivery zone management/i })).toBeVisible();
     });
 
     test('should display user menu in header', async ({ page }) => {

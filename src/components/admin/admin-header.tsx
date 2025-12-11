@@ -63,14 +63,19 @@ export function AdminHeader({ user }: AdminHeaderProps) {
       <div className="flex items-center gap-4">
         {/* Spacer for mobile menu button */}
         <div className="w-10 md:hidden" />
-        <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+        <div className="text-lg font-semibold">Admin Dashboard</div>
       </div>
 
       <div className="flex items-center gap-4">
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Button
+              variant="ghost"
+              className="relative h-10 w-10 rounded-full"
+              data-testid="user-menu-trigger"
+              aria-label="User menu"
+            >
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   {getInitials()}
