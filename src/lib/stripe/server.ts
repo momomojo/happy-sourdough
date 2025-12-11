@@ -1,9 +1,30 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  timeout: 30000, // 30 second timeout
-  maxNetworkRetries: 2, // Retry twice on network errors
-});
+// Create a fresh Stripe client for each request to avoid cold start issues on serverless
+function createStripeClient(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+
+  return new Stripe(key, {
+    // Use shorter timeout for serverless environment
+    timeout: 20000,
+    maxNetworkRetries: 3,
+    // Explicitly set the host to ensure proper connection
+    host: 'api.stripe.com',
+    protocol: 'https',
+    telemetry: false, // Disable telemetry to reduce overhead
+  });
+}
+
+// Export for use in API routes - creates fresh client each time
+export function getStripeClient(): Stripe {
+  return createStripeClient();
+}
+
+// Legacy export for backwards compatibility (still creates fresh instances)
+export const stripe = createStripeClient();
 
 /**
  * Create a Stripe Checkout session for an order
@@ -21,7 +42,9 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
-  const session = await stripe.checkout.sessions.create({
+  // Use fresh client for each request
+  const client = getStripeClient();
+  const session = await client.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
     line_items: lineItems,
@@ -40,7 +63,8 @@ export async function createCheckoutSession({
  * Retrieve a checkout session by ID
  */
 export async function getCheckoutSession(sessionId: string) {
-  return stripe.checkout.sessions.retrieve(sessionId, {
+  const client = getStripeClient();
+  return client.checkout.sessions.retrieve(sessionId, {
     expand: ['payment_intent'],
   });
 }
@@ -57,7 +81,8 @@ export async function createRefund({
   amount?: number;
   reason?: Stripe.RefundCreateParams.Reason;
 }) {
-  return stripe.refunds.create({
+  const client = getStripeClient();
+  return client.refunds.create({
     payment_intent: paymentIntentId,
     amount, // If undefined, refunds full amount
     reason,
@@ -71,7 +96,8 @@ export function verifyWebhookSignature(
   payload: string | Buffer,
   signature: string
 ): Stripe.Event {
-  return stripe.webhooks.constructEvent(
+  const client = getStripeClient();
+  return client.webhooks.constructEvent(
     payload,
     signature,
     process.env.STRIPE_WEBHOOK_SECRET!

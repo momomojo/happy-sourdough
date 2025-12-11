@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getStripeClient } from '@/lib/stripe/server';
 
 export const maxDuration = 30;
 
@@ -24,18 +25,18 @@ export async function GET() {
     },
     NEXT_PUBLIC_APP_URL: {
       exists: !!process.env.NEXT_PUBLIC_APP_URL,
-      value: process.env.NEXT_PUBLIC_APP_URL || 'not set',
+      value: process.env.NEXT_PUBLIC_APP_URL?.trim() || 'not set',
     },
   };
 
-  // Test Stripe connection using raw fetch
-  let stripeTest: { success: boolean; error?: string; mode?: string; durationMs?: number; rawResponse?: unknown } = { success: false };
+  // Test using raw fetch
+  let rawFetchTest: { success: boolean; error?: string; mode?: string; durationMs?: number } = { success: false };
 
   try {
     if (process.env.STRIPE_SECRET_KEY) {
       const key = process.env.STRIPE_SECRET_KEY;
+      const fetchStart = Date.now();
 
-      // Use raw fetch to test Stripe API
       const response = await fetch('https://api.stripe.com/v1/products?limit=1', {
         method: 'GET',
         headers: {
@@ -48,30 +49,58 @@ export async function GET() {
 
       if (response.ok) {
         const mode = key.startsWith('sk_live_') ? 'live' : 'test';
-        stripeTest = {
+        rawFetchTest = {
           success: true,
           mode,
-          durationMs: Date.now() - startTime,
+          durationMs: Date.now() - fetchStart,
         };
       } else {
-        stripeTest = {
+        rawFetchTest = {
           success: false,
           error: data.error?.message || 'Unknown error',
-          durationMs: Date.now() - startTime,
-          rawResponse: data,
+          durationMs: Date.now() - fetchStart,
         };
       }
     } else {
-      stripeTest = { success: false, error: 'STRIPE_SECRET_KEY not set' };
+      rawFetchTest = { success: false, error: 'STRIPE_SECRET_KEY not set' };
     }
   } catch (err) {
     const error = err instanceof Error ? err : new Error('Unknown error');
-    stripeTest = {
+    rawFetchTest = {
       success: false,
       error: error.message,
       durationMs: Date.now() - startTime,
     };
   }
 
-  return NextResponse.json({ ...stripeCheck, stripeTest });
+  // Test using Stripe SDK
+  let sdkTest: { success: boolean; error?: string; mode?: string; durationMs?: number; productCount?: number } = { success: false };
+
+  try {
+    const sdkStart = Date.now();
+    const client = getStripeClient();
+    const products = await client.products.list({ limit: 1 });
+    const mode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_') ? 'live' : 'test';
+
+    sdkTest = {
+      success: true,
+      mode,
+      productCount: products.data.length,
+      durationMs: Date.now() - sdkStart,
+    };
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Unknown error');
+    sdkTest = {
+      success: false,
+      error: error.message,
+      durationMs: Date.now() - startTime,
+    };
+  }
+
+  return NextResponse.json({
+    ...stripeCheck,
+    rawFetchTest,
+    sdkTest,
+    totalDurationMs: Date.now() - startTime,
+  });
 }
