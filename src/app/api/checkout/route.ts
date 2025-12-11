@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/lib/supabase/server';
 import { createCheckoutSession } from '@/lib/stripe/server';
 import { calculateTax } from '@/lib/tax';
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
 
-    // Verify products exist, are available, and fetch ACTUAL server-side prices
+    // Verify products exist, are available, fetch prices, inventory, lead time, and max_per_order
     const variantIds = items.map(item => item.variantId);
     const { data: variantsData, error: variantsError } = await (supabase
       .from('product_variants') as ReturnType<typeof supabase.from>)
@@ -75,12 +76,17 @@ export async function POST(request: NextRequest) {
         product_id,
         price_adjustment,
         is_available,
-        products!inner(base_price, is_available)
+        inventory_count,
+        track_inventory,
+        products!inner(base_price, is_available, lead_time_hours, max_per_order, name)
       `)
       .in('id', variantIds);
 
     if (variantsError) {
-      console.error('Error fetching variants:', variantsError);
+      Sentry.captureException(variantsError, {
+        tags: { api: 'checkout', step: 'fetch_variants' },
+        extra: { variantIds },
+      });
       return NextResponse.json(
         { error: 'Failed to validate cart items' },
         { status: 500 }
@@ -92,16 +98,29 @@ export async function POST(request: NextRequest) {
       product_id: string;
       price_adjustment: number;
       is_available: boolean;
+      inventory_count: number | null;
+      track_inventory: boolean;
       products: {
         base_price: number;
         is_available: boolean;
+        lead_time_hours: number;
+        max_per_order: number | null;
+        name: string;
       };
     }> | null;
 
-    // Validate all items are available AND verify prices
+    // Validate all items
     const unavailableItems: string[] = [];
     const priceMismatchItems: string[] = [];
+    const insufficientStockItems: string[] = [];
+    const leadTimeViolations: string[] = [];
+    const maxPerOrderViolations: string[] = [];
     let serverCalculatedSubtotal = 0;
+
+    // Calculate hours until delivery
+    const deliveryDateTime = new Date(`${deliveryDate}T${deliveryWindow.split(' - ')[0]}:00`);
+    const now = new Date();
+    const hoursUntilDelivery = (deliveryDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     items.forEach(item => {
       const variant = variants?.find(v => v.id === item.variantId);
@@ -114,7 +133,32 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      // CRITICAL SECURITY FIX: Calculate price server-side from database
+      // INVENTORY VALIDATION: Check stock if tracking is enabled
+      if (variant.track_inventory && variant.inventory_count !== null) {
+        if (variant.inventory_count < item.quantity) {
+          insufficientStockItems.push(
+            `${item.productName} (only ${variant.inventory_count} available)`
+          );
+        }
+      }
+
+      // LEAD TIME VALIDATION: Check if there's enough time for preparation
+      const requiredLeadTime = variant.products.lead_time_hours || 0;
+      if (hoursUntilDelivery < requiredLeadTime) {
+        leadTimeViolations.push(
+          `${item.productName} requires ${requiredLeadTime}h notice`
+        );
+      }
+
+      // MAX PER ORDER VALIDATION: Check quantity limits
+      const maxPerOrder = variant.products.max_per_order;
+      if (maxPerOrder !== null && item.quantity > maxPerOrder) {
+        maxPerOrderViolations.push(
+          `${item.productName} (max ${maxPerOrder} per order)`
+        );
+      }
+
+      // PRICE VERIFICATION: Calculate price server-side from database
       const serverSidePrice = variant.products.base_price + variant.price_adjustment;
       const clientSentPrice = item.unitPrice;
 
@@ -133,6 +177,27 @@ export async function POST(request: NextRequest) {
     if (unavailableItems.length > 0) {
       return NextResponse.json(
         { error: `The following items are no longer available: ${unavailableItems.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    if (insufficientStockItems.length > 0) {
+      return NextResponse.json(
+        { error: `Insufficient stock: ${insufficientStockItems.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    if (leadTimeViolations.length > 0) {
+      return NextResponse.json(
+        { error: `Not enough preparation time: ${leadTimeViolations.join(', ')}. Please select a later delivery time.` },
+        { status: 400 }
+      );
+    }
+
+    if (maxPerOrderViolations.length > 0) {
+      return NextResponse.json(
+        { error: `Quantity limit exceeded: ${maxPerOrderViolations.join(', ')}` },
         { status: 400 }
       );
     }
@@ -166,21 +231,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate tax using configurable rate from business_settings
-    // Supports flat rate, by-zone, and by-distance calculations
-    // Falls back to 8% if not configured
     const taxAmount = await calculateTax(verifiedSubtotal, deliveryZoneId);
     const total = verifiedSubtotal + deliveryFee + taxAmount - discountAmount;
 
     // Resolve time_slot_id based on deliveryDate and deliveryWindow
-    // Format: "10:00:00" from "10:00 - 12:00"
     let timeSlotId: string | null = null;
     if (deliveryDate && deliveryWindow) {
-      // Parse window start from string "10:00 - 12:00" -> "10:00"
-      const windowStart = deliveryWindow.split(' - ')[0]; // Basic parsing approach
-
-      // We need to format it as HH:mm:ss for postgres time comparison if needed, 
-      // but the seed data shows '10:00' format. 
-      // Let's try to match both date and window_start.
+      const windowStart = deliveryWindow.split(' - ')[0];
 
       const { data: slotData, error: slotError } = await (supabase
         .from('time_slots') as ReturnType<typeof supabase.from>)
@@ -198,10 +255,12 @@ export async function POST(request: NextRequest) {
           );
         }
         timeSlotId = slotData.id;
-      } else {
-        // Optional: Handle case where slot doesn't exist (maybe created on fly or error)
-        console.warn(`Time slot not found for ${deliveryDate} ${windowStart}`);
-        // We won't block the order for this in MVP, but ideally we should validation.
+      } else if (slotError) {
+        Sentry.captureMessage('Time slot not found', {
+          level: 'warning',
+          tags: { api: 'checkout', step: 'time_slot' },
+          extra: { deliveryDate, windowStart },
+        });
       }
     }
 
@@ -228,7 +287,7 @@ export async function POST(request: NextRequest) {
       delivery_zone_id: deliveryZoneId,
       delivery_address: deliveryAddressJson,
       pickup_location: fulfillmentType === 'pickup' ? 'Main Bakery' : null,
-      subtotal: verifiedSubtotal, // SECURITY: Use server-calculated value
+      subtotal: verifiedSubtotal,
       delivery_fee: deliveryFee,
       discount_amount: discountAmount,
       discount_code_id: discountCodeId || null,
@@ -252,7 +311,10 @@ export async function POST(request: NextRequest) {
       .single() as { data: Order | null; error: unknown };
 
     if (orderError || !order) {
-      console.error('Error creating order:', orderError);
+      Sentry.captureException(orderError, {
+        tags: { api: 'checkout', step: 'create_order' },
+        extra: { orderInsert },
+      });
       return NextResponse.json(
         { error: 'Failed to create order' },
         { status: 500 }
@@ -266,7 +328,6 @@ export async function POST(request: NextRequest) {
       if (!variant) {
         throw new Error(`Variant ${item.variantId} not found during order item creation`);
       }
-      // SECURITY: Calculate price from database values
       const serverSidePrice = variant.products.base_price + variant.price_adjustment;
 
       return {
@@ -276,7 +337,7 @@ export async function POST(request: NextRequest) {
         product_name: item.productName,
         variant_name: item.variantName,
         quantity: item.quantity,
-        unit_price: serverSidePrice, // SECURITY: Use server-calculated price
+        unit_price: serverSidePrice,
         total_price: serverSidePrice * item.quantity,
         special_instructions: null,
       };
@@ -287,7 +348,10 @@ export async function POST(request: NextRequest) {
       .insert(orderItems as never);
 
     if (itemsError) {
-      console.error('Error creating order items:', itemsError);
+      Sentry.captureException(itemsError, {
+        tags: { api: 'checkout', step: 'create_order_items' },
+        extra: { orderId: order.id, itemCount: orderItems.length },
+      });
       // Rollback order creation
       await (supabase.from('orders') as ReturnType<typeof supabase.from>).delete().eq('id', order.id);
       return NextResponse.json(
@@ -298,13 +362,15 @@ export async function POST(request: NextRequest) {
 
     // Reserve the time slot if one was assigned
     if (timeSlotId) {
-      // Note: `as any` cast is required for Supabase SSR client RPC type inference
       const { error: reserveError } = await (supabase as any).rpc('increment_slot_orders', {
         slot_id: timeSlotId,
       });
 
       if (reserveError) {
-        console.error('Error reserving time slot:', reserveError);
+        Sentry.captureException(reserveError, {
+          tags: { api: 'checkout', step: 'reserve_slot' },
+          extra: { orderId: order.id, timeSlotId },
+        });
         // Rollback: delete order items and order
         await (supabase.from('order_items') as ReturnType<typeof supabase.from>).delete().eq('order_id', order.id);
         await (supabase.from('orders') as ReturnType<typeof supabase.from>).delete().eq('id', order.id);
@@ -315,57 +381,59 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save delivery address for authenticated users
+    // Save delivery address for authenticated users (non-blocking)
     if (userId && fulfillmentType === 'delivery' && deliveryAddress) {
-      // Check if this exact address already exists
-      const { data: existingAddress } = await (supabase
-        .from('customer_addresses') as ReturnType<typeof supabase.from>)
-        .select('id')
-        .eq('user_id', userId)
-        .eq('street', deliveryAddress.street)
-        .eq('city', deliveryAddress.city)
-        .eq('state', deliveryAddress.state)
-        .eq('zip', deliveryAddress.zip)
-        .maybeSingle();
-
-      // Only save if address doesn't already exist
-      if (!existingAddress) {
-        // Check if user has any addresses to determine if this should be default
-        const { data: userAddresses } = await (supabase
+      try {
+        const { data: existingAddress } = await (supabase
           .from('customer_addresses') as ReturnType<typeof supabase.from>)
           .select('id')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('street', deliveryAddress.street)
+          .eq('city', deliveryAddress.city)
+          .eq('state', deliveryAddress.state)
+          .eq('zip', deliveryAddress.zip)
+          .maybeSingle();
 
-        const isFirstAddress = !userAddresses || (userAddresses as unknown[]).length === 0;
+        if (!existingAddress) {
+          const { data: userAddresses } = await (supabase
+            .from('customer_addresses') as ReturnType<typeof supabase.from>)
+            .select('id')
+            .eq('user_id', userId);
 
-        await (supabase
-          .from('customer_addresses') as ReturnType<typeof supabase.from>)
-          .insert({
-            user_id: userId,
-            label: 'Recent Order',
-            street: deliveryAddress.street,
-            apt: deliveryAddress.apt || null,
-            city: deliveryAddress.city,
-            state: deliveryAddress.state,
-            zip: deliveryAddress.zip,
-            delivery_instructions: deliveryInstructions || null,
-            is_default: isFirstAddress,
-          });
-        // Ignore errors - address saving is optional
+          const isFirstAddress = !userAddresses || (userAddresses as unknown[]).length === 0;
+
+          await (supabase
+            .from('customer_addresses') as ReturnType<typeof supabase.from>)
+            .insert({
+              user_id: userId,
+              label: 'Recent Order',
+              street: deliveryAddress.street,
+              apt: deliveryAddress.apt || null,
+              city: deliveryAddress.city,
+              state: deliveryAddress.state,
+              zip: deliveryAddress.zip,
+              delivery_instructions: deliveryInstructions || null,
+              is_default: isFirstAddress,
+            });
+        }
+      } catch (addressError) {
+        // Non-blocking - just log to Sentry
+        Sentry.captureException(addressError, {
+          level: 'warning',
+          tags: { api: 'checkout', step: 'save_address' },
+          extra: { userId },
+        });
       }
     }
 
     // Create Stripe checkout session
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
 
-    // Helper to ensure image URL is absolute
     const getAbsoluteImageUrl = (imageUrl: string | undefined): string | undefined => {
       if (!imageUrl) return undefined;
-      // If already absolute, return as-is
       if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
         return imageUrl;
       }
-      // Convert relative URL to absolute
       return `${appUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
     };
 
@@ -374,7 +442,6 @@ export async function POST(request: NextRequest) {
       if (!variant) {
         throw new Error(`Variant ${item.variantId} not found during Stripe session creation`);
       }
-      // SECURITY: Calculate price from database values for Stripe
       const serverSidePrice = variant.products.base_price + variant.price_adjustment;
       const absoluteImageUrl = getAbsoluteImageUrl(item.imageUrl);
 
@@ -386,7 +453,7 @@ export async function POST(request: NextRequest) {
             description: item.productName,
             ...(absoluteImageUrl && { images: [absoluteImageUrl] }),
           },
-          unit_amount: Math.round(serverSidePrice * 100), // SECURITY: Use server price
+          unit_amount: Math.round(serverSidePrice * 100),
         },
         quantity: item.quantity,
       };
@@ -430,7 +497,10 @@ export async function POST(request: NextRequest) {
         cancelUrl: `${appUrl}/checkout?cancelled=true`,
       });
     } catch (stripeError) {
-      console.error('Stripe checkout error:', stripeError);
+      Sentry.captureException(stripeError, {
+        tags: { api: 'checkout', step: 'stripe_session' },
+        extra: { orderId: order.id, email },
+      });
       // Rollback: release time slot, delete order items and order
       if (timeSlotId) {
         await (supabase as any).rpc('decrement_slot_orders', { slot_id: timeSlotId });
@@ -457,7 +527,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Checkout error:', error);
+    Sentry.captureException(error, {
+      tags: { api: 'checkout', step: 'unhandled' },
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

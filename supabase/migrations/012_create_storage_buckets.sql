@@ -1,5 +1,6 @@
 -- Create storage buckets for product images and site assets
 -- These buckets enable direct file uploads from the admin dashboard
+-- NOTE: This migration updates bucket settings and replaces policies from migration 007
 
 -- Create product-images bucket (public for product display)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -28,6 +29,16 @@ ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- Drop existing policies from migration 007 before recreating
+DROP POLICY IF EXISTS "Public read access for product images" ON storage.objects;
+DROP POLICY IF EXISTS "Admin upload access for product images" ON storage.objects;
+DROP POLICY IF EXISTS "Admin update access for product images" ON storage.objects;
+DROP POLICY IF EXISTS "Admin delete access for product images" ON storage.objects;
+DROP POLICY IF EXISTS "Public read access for site assets" ON storage.objects;
+DROP POLICY IF EXISTS "Admin upload access for site assets" ON storage.objects;
+DROP POLICY IF EXISTS "Admin update access for site assets" ON storage.objects;
+DROP POLICY IF EXISTS "Admin delete access for site assets" ON storage.objects;
 
 -- Storage policies for product-images bucket
 

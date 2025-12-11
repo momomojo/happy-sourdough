@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { VariantSelector } from './variant-selector';
 import { useCart } from '@/contexts/cart-context';
 import type { ProductVariant } from '@/types/database';
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, AlertCircle } from 'lucide-react';
 
 interface AddToCartFormProps {
   productId: string;
@@ -15,6 +15,8 @@ interface AddToCartFormProps {
   basePrice: number;
   variants: ProductVariant[];
   imageUrl?: string;
+  maxPerOrder?: number | null;
+  leadTimeHours?: number;
 }
 
 export function AddToCartForm({
@@ -23,8 +25,10 @@ export function AddToCartForm({
   basePrice,
   variants,
   imageUrl,
+  maxPerOrder,
+  leadTimeHours,
 }: AddToCartFormProps) {
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
 
   // Find default variant or use first available
   const defaultVariant = variants.find((v) => v.sort_order === 0) || variants[0];
@@ -35,14 +39,32 @@ export function AddToCartForm({
 
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
+  // Use database max_per_order or default to 10
+  const effectiveMaxPerOrder = maxPerOrder ?? 10;
+
+  // Calculate how many of this product are already in cart
+  const currentCartQuantity = items
+    .filter(item => item.productId === productId)
+    .reduce((sum, item) => sum + item.quantity, 0);
+
+  // Calculate remaining quantity that can be added
+  const remainingAllowed = Math.max(0, effectiveMaxPerOrder - currentCartQuantity);
+
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= 10) {
+    if (newQuantity >= 1 && newQuantity <= remainingAllowed) {
       setQuantity(newQuantity);
     }
   };
 
   const handleAddToCart = async () => {
     if (!selectedVariant) return;
+
+    // Check inventory if tracking is enabled
+    if (selectedVariant.track_inventory && selectedVariant.inventory_count !== null) {
+      if (selectedVariant.inventory_count < quantity) {
+        return; // Will show error message below
+      }
+    }
 
     setIsAdding(true);
 
@@ -76,6 +98,15 @@ export function AddToCartForm({
     );
   }
 
+  // Check stock availability
+  const hasInsufficientStock = selectedVariant?.track_inventory &&
+    selectedVariant.inventory_count !== null &&
+    selectedVariant.inventory_count < quantity;
+
+  const isOutOfStock = selectedVariant?.track_inventory &&
+    selectedVariant.inventory_count !== null &&
+    selectedVariant.inventory_count <= 0;
+
   return (
     <div className="space-y-6">
       {/* Variant Selector */}
@@ -86,6 +117,48 @@ export function AddToCartForm({
         basePrice={basePrice}
       />
 
+      {/* Lead Time Notice */}
+      {leadTimeHours && leadTimeHours > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-amber-800">
+            This item requires <strong>{leadTimeHours} hours</strong> advance notice.
+            Please select a delivery time at least {leadTimeHours} hours from now.
+          </p>
+        </div>
+      )}
+
+      {/* Stock Warning */}
+      {selectedVariant?.track_inventory && selectedVariant.inventory_count !== null && (
+        <>
+          {isOutOfStock ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-800">
+                This item is currently out of stock.
+              </p>
+            </div>
+          ) : selectedVariant.inventory_count <= 5 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-amber-800">
+                Only <strong>{selectedVariant.inventory_count}</strong> left in stock!
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Cart Limit Notice */}
+      {currentCartQuantity > 0 && remainingAllowed < effectiveMaxPerOrder && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <p className="text-sm text-blue-800">
+            You already have {currentCartQuantity} of this product in your cart.
+            You can add up to {remainingAllowed} more (max {effectiveMaxPerOrder} per order).
+          </p>
+        </div>
+      )}
+
       {/* Quantity Selector */}
       <div className="space-y-2">
         <Label htmlFor="quantity">Quantity</Label>
@@ -95,7 +168,7 @@ export function AddToCartForm({
             variant="outline"
             size="icon"
             onClick={() => handleQuantityChange(quantity - 1)}
-            disabled={quantity <= 1}
+            disabled={quantity <= 1 || isOutOfStock}
           >
             <Minus className="h-4 w-4" />
           </Button>
@@ -104,10 +177,11 @@ export function AddToCartForm({
             id="quantity"
             type="number"
             min="1"
-            max="10"
+            max={Math.min(remainingAllowed, selectedVariant?.track_inventory && selectedVariant.inventory_count !== null ? selectedVariant.inventory_count : remainingAllowed)}
             value={quantity}
             onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
             className="w-20 text-center"
+            disabled={isOutOfStock}
           />
 
           <Button
@@ -115,12 +189,20 @@ export function AddToCartForm({
             variant="outline"
             size="icon"
             onClick={() => handleQuantityChange(quantity + 1)}
-            disabled={quantity >= 10}
+            disabled={
+              quantity >= remainingAllowed ||
+              isOutOfStock ||
+              (selectedVariant?.track_inventory &&
+                selectedVariant.inventory_count !== null &&
+                quantity >= selectedVariant.inventory_count)
+            }
           >
             <Plus className="h-4 w-4" />
           </Button>
 
-          <span className="text-sm text-gray-500">Max 10 per order</span>
+          <span className="text-sm text-gray-500">
+            Max {effectiveMaxPerOrder} per order
+          </span>
         </div>
       </div>
 
@@ -141,12 +223,21 @@ export function AddToCartForm({
       {/* Add to Cart Button */}
       <Button
         onClick={handleAddToCart}
-        disabled={isAdding || !selectedVariant}
+        disabled={
+          isAdding ||
+          !selectedVariant ||
+          isOutOfStock ||
+          hasInsufficientStock ||
+          remainingAllowed <= 0
+        }
         className="w-full"
         size="lg"
       >
         <ShoppingCart className="mr-2 h-5 w-5" />
-        {isAdding ? 'Adding...' : 'Add to Cart'}
+        {isAdding ? 'Adding...' :
+          isOutOfStock ? 'Out of Stock' :
+          remainingAllowed <= 0 ? 'Max Quantity Reached' :
+          'Add to Cart'}
       </Button>
 
       {/* Prep Time Notice */}

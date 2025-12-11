@@ -159,6 +159,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             basePrice={product.base_price}
             variants={variants}
             imageUrl={product.image_url || undefined}
+            maxPerOrder={product.max_per_order}
+            leadTimeHours={product.lead_time_hours}
           />
 
           <Separator />

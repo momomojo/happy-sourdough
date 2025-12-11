@@ -246,10 +246,9 @@ export interface BusinessSetting {
   id: string;
   key: string;
   value: unknown;
-  category: string;
   description: string | null;
-  updated_at: string | null;
-  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Supabase Database type helper
@@ -333,8 +332,8 @@ export interface Database {
       };
       business_settings: {
         Row: BusinessSetting;
-        Insert: Omit<BusinessSetting, 'id' | 'updated_at' | 'updated_by'>;
-        Update: Partial<Omit<BusinessSetting, 'id' | 'updated_at' | 'updated_by'>>;
+        Insert: Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<BusinessSetting, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
     Functions: {
@@ -368,6 +367,28 @@ export interface Database {
       };
       update_business_setting: {
         Args: { new_value: unknown; setting_key: string };
+        Returns: boolean;
+      };
+      decrement_inventory_for_order: {
+        Args: { order_id_param: string };
+        Returns: boolean;
+      };
+      validate_inventory: {
+        Args: { variant_ids: string[]; quantities: number[] };
+        Returns: {
+          valid: boolean;
+          errors: Array<{
+            variant_id?: string;
+            product_name?: string;
+            variant_name?: string;
+            requested?: number;
+            available?: number;
+            error: string;
+          }>;
+        };
+      };
+      restore_inventory_for_order: {
+        Args: { order_id_param: string };
         Returns: boolean;
       };
     };
