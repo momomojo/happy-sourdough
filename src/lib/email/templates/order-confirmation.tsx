@@ -33,6 +33,9 @@ interface OrderConfirmationEmailProps {
   deliveryAddress?: string;
   pickupLocation?: string;
   businessEmail?: string;
+  businessName?: string;
+  headerMessage?: string;
+  footerMessage?: string;
   timeSlot?: {
     date: string;
     windowStart: string;
@@ -53,10 +56,13 @@ export const OrderConfirmationEmail = ({
   deliveryAddress,
   pickupLocation = '123 Bakery Lane, San Francisco, CA 94102',
   businessEmail = 'support@happysourdough.com',
+  businessName = 'Happy Sourdough',
+  headerMessage = 'Thank You for Your Order!',
+  footerMessage,
   timeSlot,
   estimatedTime,
 }: OrderConfirmationEmailProps) => {
-  const previewText = `Order ${orderNumber} confirmed - Happy Sourdough`;
+  const previewText = `Order ${orderNumber} confirmed - ${businessName}`;
 
   return (
     <Html>
@@ -64,7 +70,7 @@ export const OrderConfirmationEmail = ({
       <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Thank You for Your Order!</Heading>
+          <Heading style={h1}>{headerMessage}</Heading>
 
           <Text style={text}>
             Hi {customerName},
@@ -197,12 +203,11 @@ export const OrderConfirmationEmail = ({
           <Hr style={hr} />
 
           <Text style={footer}>
-            We&apos;ll send you updates as your order progresses. If you have any questions,
-            please don&apos;t hesitate to contact us at {businessEmail}
+            {footerMessage || `We'll send you updates as your order progresses. If you have any questions, please don't hesitate to contact us at ${businessEmail}`}
           </Text>
 
           <Text style={footer}>
-            Happy Sourdough - Fresh Baked with Love
+            {businessName} - Fresh Baked with Love
           </Text>
         </Container>
       </Body>

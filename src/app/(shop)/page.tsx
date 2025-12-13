@@ -4,9 +4,14 @@ import { ArrowRight, ChevronRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getFeaturedProducts } from '@/lib/supabase/products';
 import { ProductCard } from '@/components/products/product-card';
+import { getWebsiteContent, getBusinessInfo } from '@/lib/business-settings';
 
 export default async function HomePage() {
-    const featuredProducts = await getFeaturedProducts(4);
+    const [featuredProducts, websiteContent, businessInfo] = await Promise.all([
+        getFeaturedProducts(4),
+        getWebsiteContent(),
+        getBusinessInfo(),
+    ]);
 
     return (
         <>
@@ -24,36 +29,33 @@ export default async function HomePage() {
 
                 <div className="container px-4 py-16 z-10">
                     <div className="max-w-4xl mx-auto text-center space-y-8">
-                        {/* Badge */}
+                        {/* Badge - Uses tagline from settings */}
                         <div className="animate-fade-in">
                             <span className="inline-flex items-center gap-2 py-2 px-4 rounded-full bg-accent/15 border border-accent/30 text-primary font-medium text-sm tracking-wide backdrop-blur-sm">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
-                                Est. 2024 • Artisan Bakery
+                                {websiteContent.tagline || 'Fresh from our oven to your table'}
                             </span>
                         </div>
 
-                        {/* Headline with Improved Typography */}
-                        <h1 className="animate-slide-up stagger-1 font-heading">
-                            <span className="block text-foreground mb-3">Wild Yeast.</span>
-                            <span className="block text-foreground mb-3">Time-Honored Craft.</span>
-                            <span className="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-accent text-5xl md:text-7xl italic font-light">
-                                Slow Fermentation.
+                        {/* Headline - Uses hero_headline from settings */}
+                        <h1 className="animate-slide-up stagger-1 font-heading text-4xl md:text-6xl lg:text-7xl">
+                            <span className="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-accent italic font-light">
+                                {websiteContent.hero_headline || 'Artisan Sourdough, Baked Fresh Daily'}
                             </span>
                         </h1>
 
-                        {/* Description with Better Spacing */}
+                        {/* Subheadline - Uses hero_subheadline from settings */}
                         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-slide-up stagger-2">
-                            We bake with purpose. Each loaf takes 48 hours to ferment, using only organic flour, water, salt, and our
-                            <span className="text-foreground font-medium"> century-old sourdough starter</span>.
+                            {websiteContent.hero_subheadline || 'Handcrafted breads and pastries made with love and traditional techniques'}
                         </p>
 
-                        {/* CTA Buttons with Enhanced Style */}
+                        {/* CTA Buttons - Uses hero_cta_text from settings */}
                         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-slide-up stagger-3">
                             <Button asChild size="lg" className="h-14 px-10 text-base font-medium rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 bg-primary hover:bg-primary/90">
                                 <Link href="/products">
-                                    Explore Our Breads
+                                    {websiteContent.hero_cta_text || 'Order Now'}
                                     <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
                             </Button>
@@ -194,7 +196,7 @@ export default async function HomePage() {
                                 ))}
                             </div>
                             <blockquote className="text-lg text-primary-foreground/90 leading-relaxed mb-6 font-accent italic">
-                                "The best sourdough I've had outside of San Francisco. The crust is perfect, and the crumb is beautifully open."
+                                &ldquo;The best sourdough I&apos;ve had outside of San Francisco. The crust is perfect, and the crumb is beautifully open.&rdquo;
                             </blockquote>
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold">
@@ -215,7 +217,7 @@ export default async function HomePage() {
                                 ))}
                             </div>
                             <blockquote className="text-lg text-primary-foreground/90 leading-relaxed mb-6 font-accent italic">
-                                "My weekly staple. The olive rosemary loaf is absolutely addictive. Can't start my weekend without it."
+                                &ldquo;My weekly staple. The olive rosemary loaf is absolutely addictive. Can&apos;t start my weekend without it.&rdquo;
                             </blockquote>
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold">
@@ -236,7 +238,7 @@ export default async function HomePage() {
                                 ))}
                             </div>
                             <blockquote className="text-lg text-primary-foreground/90 leading-relaxed mb-6 font-accent italic">
-                                "Love the delivery service. Fresh warm bread on Sunday morning is a game changer for our family brunch."
+                                &ldquo;Love the delivery service. Fresh warm bread on Sunday morning is a game changer for our family brunch.&rdquo;
                             </blockquote>
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold">

@@ -270,6 +270,36 @@ export interface OperatingHours {
   sunday: { open: string; close: string; closed: boolean };
 }
 
+export interface WebsiteContent {
+  hero_headline: string;
+  hero_subheadline: string;
+  hero_cta_text: string;
+  about_text: string;
+  tagline: string;
+}
+
+export interface SocialLinks {
+  instagram: string;
+  facebook: string;
+  twitter: string;
+  tiktok: string;
+  yelp: string;
+}
+
+export interface Branding {
+  primary_color: string;
+  accent_color: string;
+  logo_url: string;
+}
+
+export interface EmailTemplates {
+  confirmation_header: string;
+  confirmation_footer: string;
+  status_update_header: string;
+  ready_for_pickup_message: string;
+  out_for_delivery_message: string;
+}
+
 // Supabase Database type helper
 export interface Database {
   public: {

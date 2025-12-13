@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import type { BusinessInfo, OperatingHours } from '@/types/database';
+import type { BusinessInfo, OperatingHours, WebsiteContent, SocialLinks, Branding, EmailTemplates } from '@/types/database';
 
 // Default values as fallback (should match migration 013)
 const DEFAULT_BUSINESS_INFO: BusinessInfo = {
@@ -19,9 +19,44 @@ const DEFAULT_OPERATING_HOURS: OperatingHours = {
   sunday: { open: '08:00', close: '14:00', closed: false },
 };
 
+// Default values for new settings
+const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
+  hero_headline: 'Artisan Sourdough, Baked Fresh Daily',
+  hero_subheadline: 'Handcrafted breads and pastries made with love and traditional techniques',
+  hero_cta_text: 'Order Now',
+  about_text: 'We are a local artisan bakery specializing in handcrafted sourdough bread and pastries.',
+  tagline: 'Fresh from our oven to your table',
+};
+
+const DEFAULT_SOCIAL_LINKS: SocialLinks = {
+  instagram: '',
+  facebook: '',
+  twitter: '',
+  tiktok: '',
+  yelp: '',
+};
+
+const DEFAULT_BRANDING: Branding = {
+  primary_color: '#8B4513',
+  accent_color: '#D4A574',
+  logo_url: '',
+};
+
+const DEFAULT_EMAIL_TEMPLATES: EmailTemplates = {
+  confirmation_header: 'Thank you for your order!',
+  confirmation_footer: 'Questions? Reply to this email or call us at {phone}.',
+  status_update_header: 'Your order status has been updated',
+  ready_for_pickup_message: 'Your order is ready! Please pick it up during our business hours.',
+  out_for_delivery_message: 'Your order is on its way! Our driver will arrive within the estimated window.',
+};
+
 // Cache for business settings to avoid repeated database calls
 let cachedBusinessInfo: BusinessInfo | null = null;
 let cachedOperatingHours: OperatingHours | null = null;
+let cachedWebsiteContent: WebsiteContent | null = null;
+let cachedSocialLinks: SocialLinks | null = null;
+let cachedBranding: Branding | null = null;
+let cachedEmailTemplates: EmailTemplates | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -169,10 +204,142 @@ export function formatOperatingHours(hours: OperatingHours): string {
 }
 
 /**
+ * Get website content settings (hero, about, tagline)
+ */
+export async function getWebsiteContent(): Promise<WebsiteContent> {
+  if (cachedWebsiteContent && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedWebsiteContent;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await (supabase
+      .from('business_settings') as ReturnType<typeof supabase.from>)
+      .select('value')
+      .eq('key', 'website_content')
+      .single() as { data: { value: unknown } | null; error: unknown };
+
+    if (error || !data) {
+      console.warn('Website content not found, using defaults');
+      cachedWebsiteContent = DEFAULT_WEBSITE_CONTENT;
+      cacheTimestamp = Date.now();
+      return DEFAULT_WEBSITE_CONTENT;
+    }
+
+    cachedWebsiteContent = data.value as WebsiteContent;
+    cacheTimestamp = Date.now();
+    return cachedWebsiteContent;
+  } catch (err) {
+    console.error('Error fetching website content:', err);
+    return DEFAULT_WEBSITE_CONTENT;
+  }
+}
+
+/**
+ * Get social media links
+ */
+export async function getSocialLinks(): Promise<SocialLinks> {
+  if (cachedSocialLinks && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedSocialLinks;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await (supabase
+      .from('business_settings') as ReturnType<typeof supabase.from>)
+      .select('value')
+      .eq('key', 'social_links')
+      .single() as { data: { value: unknown } | null; error: unknown };
+
+    if (error || !data) {
+      console.warn('Social links not found, using defaults');
+      cachedSocialLinks = DEFAULT_SOCIAL_LINKS;
+      cacheTimestamp = Date.now();
+      return DEFAULT_SOCIAL_LINKS;
+    }
+
+    cachedSocialLinks = data.value as SocialLinks;
+    cacheTimestamp = Date.now();
+    return cachedSocialLinks;
+  } catch (err) {
+    console.error('Error fetching social links:', err);
+    return DEFAULT_SOCIAL_LINKS;
+  }
+}
+
+/**
+ * Get branding settings (colors, logo)
+ */
+export async function getBranding(): Promise<Branding> {
+  if (cachedBranding && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedBranding;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await (supabase
+      .from('business_settings') as ReturnType<typeof supabase.from>)
+      .select('value')
+      .eq('key', 'branding')
+      .single() as { data: { value: unknown } | null; error: unknown };
+
+    if (error || !data) {
+      console.warn('Branding not found, using defaults');
+      cachedBranding = DEFAULT_BRANDING;
+      cacheTimestamp = Date.now();
+      return DEFAULT_BRANDING;
+    }
+
+    cachedBranding = data.value as Branding;
+    cacheTimestamp = Date.now();
+    return cachedBranding;
+  } catch (err) {
+    console.error('Error fetching branding:', err);
+    return DEFAULT_BRANDING;
+  }
+}
+
+/**
+ * Get email template settings
+ */
+export async function getEmailTemplates(): Promise<EmailTemplates> {
+  if (cachedEmailTemplates && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedEmailTemplates;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await (supabase
+      .from('business_settings') as ReturnType<typeof supabase.from>)
+      .select('value')
+      .eq('key', 'email_templates')
+      .single() as { data: { value: unknown } | null; error: unknown };
+
+    if (error || !data) {
+      console.warn('Email templates not found, using defaults');
+      cachedEmailTemplates = DEFAULT_EMAIL_TEMPLATES;
+      cacheTimestamp = Date.now();
+      return DEFAULT_EMAIL_TEMPLATES;
+    }
+
+    cachedEmailTemplates = data.value as EmailTemplates;
+    cacheTimestamp = Date.now();
+    return cachedEmailTemplates;
+  } catch (err) {
+    console.error('Error fetching email templates:', err);
+    return DEFAULT_EMAIL_TEMPLATES;
+  }
+}
+
+/**
  * Clear the cache (useful for tests or after settings update)
  */
 export function clearBusinessSettingsCache(): void {
   cachedBusinessInfo = null;
   cachedOperatingHours = null;
+  cachedWebsiteContent = null;
+  cachedSocialLinks = null;
+  cachedBranding = null;
+  cachedEmailTemplates = null;
   cacheTimestamp = 0;
 }

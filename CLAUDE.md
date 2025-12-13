@@ -1,5 +1,11 @@
 # Happy Sourdough - Bakery E-commerce Platform
 
+## Test Credentials (Development Only)
+
+- **Admin**: `admin@happysourdough.com` / `admin123`
+
+---
+
 ## IMPORTANT: Documentation Lookup
 
 **Always use Context7 MCP for up-to-date documentation when working on this project.**
@@ -233,9 +239,9 @@ stripe trigger charge.refunded
 
 ---
 
-## ✅ CODEBASE STATUS (Last Reviewed: 2025-12-10)
+## ✅ CODEBASE STATUS (Last Reviewed: 2025-12-13)
 
-**Status: FUNCTIONAL - Core Features Working**
+**Status: FUNCTIONAL - Core Features + Admin Customization Working**
 
 ### Completed Fixes (Phase 1 Complete)
 
@@ -256,11 +262,15 @@ All critical schema mismatches have been resolved:
 | `decrement_slot_orders` RPC | ✅ Fixed | Added via migration 004 |
 
 ### Implemented Features
-- **Homepage**: Bakery-branded with hero, featured products, categories
+- **Homepage**: Dynamic content from admin settings (hero, tagline, CTA)
 - **Discount codes**: Full implementation with validation API
 - **Customer accounts**: Profile management, order history, saved addresses
-- **Admin dashboard**: Orders, products, discounts management
+- **Admin dashboard**: Orders, products, discounts, settings management
 - **Time slot reservation**: Called during checkout with rollback support
+- **Order cancellation**: Self-service cancellation UI for customers
+- **Dynamic theming**: Admin branding colors applied via CSS variables
+- **Social links**: Footer displays configured social media links
+- **Email templates**: Customizable headers/footers from admin settings
 
 ### Remaining Code Quality Items
 - ~6 instances of `as any`/`as never` type casting (all are necessary Supabase SSR client workarounds for RPC calls)
@@ -501,3 +511,48 @@ Full admin dashboard manually tested and verified:
 - UI component enhancements
 - Product images and branding assets
 - E2E test improvements with better selectors
+
+---
+
+## 🎨 Admin Settings Integration (2025-12-13)
+
+### Settings That Control Frontend
+
+The admin settings page (`/admin/settings`) now controls these aspects of the customer-facing site:
+
+| Setting | Location | What It Controls |
+|---------|----------|-----------------|
+| `website_content.hero_headline` | Homepage | Main hero headline text |
+| `website_content.hero_subheadline` | Homepage | Hero description text |
+| `website_content.hero_cta_text` | Homepage | Primary CTA button text |
+| `website_content.tagline` | Homepage | Badge text above headline |
+| `social_links.*` | Footer | Instagram, Facebook, Twitter, TikTok, Yelp links |
+| `business_info.*` | Footer, Emails | Name, address, phone, email |
+| `branding.primary_color` | Site-wide | Primary theme color (CSS variable) |
+| `branding.accent_color` | Site-wide | Accent theme color (CSS variable) |
+| `email_templates.*` | Transactional emails | Header/footer messages |
+| `operating_hours.*` | Emails | Business hours in emails |
+
+### Files Implementing Settings
+
+| File | Settings Used |
+|------|---------------|
+| `src/app/(shop)/page.tsx` | `getWebsiteContent()`, `getBusinessInfo()` |
+| `src/components/layout/footer.tsx` | `getSocialLinks()`, `getBusinessInfo()` |
+| `src/components/theme/dynamic-theme.tsx` | `getBranding()` |
+| `src/lib/email/send.ts` | `getBusinessInfo()`, `getEmailTemplates()`, `getOperatingHours()` |
+| `src/lib/business-settings.ts` | All settings fetch functions |
+
+### Settings Cache
+
+All settings are cached for 5 minutes to avoid repeated database calls:
+- Cache TTL: 5 minutes
+- Clear cache: `clearBusinessSettingsCache()` (call after admin saves settings)
+
+### Default Fallbacks
+
+If settings are not found in the database, sensible defaults are used:
+- Business name: "Happy Sourdough"
+- Hero headline: "Artisan Sourdough, Baked Fresh Daily"
+- Social links: Empty (icons hidden)
+- Colors: Default theme colors from CSS

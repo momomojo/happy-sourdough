@@ -2,7 +2,7 @@ import { resend, EMAIL_CONFIG } from './resend';
 import OrderConfirmationEmail from './templates/order-confirmation';
 import OrderStatusUpdateEmail from './templates/order-status-update';
 import OrderReadyEmail from './templates/order-ready';
-import { getBusinessInfo, getOperatingHours, formatOperatingHours } from '@/lib/business-settings';
+import { getBusinessInfo, getOperatingHours, formatOperatingHours, getEmailTemplates } from '@/lib/business-settings';
 import type { OrderStatus } from '@/types/database';
 
 export interface OrderEmailData {
@@ -34,8 +34,17 @@ export interface OrderEmailData {
  */
 export async function sendOrderConfirmationEmail(data: OrderEmailData) {
   try {
-    // Fetch business settings
-    const businessInfo = await getBusinessInfo();
+    // Fetch business settings and email templates
+    const [businessInfo, emailTemplates] = await Promise.all([
+      getBusinessInfo(),
+      getEmailTemplates(),
+    ]);
+
+    // Replace {phone} placeholder in footer
+    const footerMessage = emailTemplates.confirmation_footer.replace(
+      '{phone}',
+      businessInfo.business_phone
+    );
 
     const { data: emailData, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
@@ -53,6 +62,9 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData) {
         deliveryAddress: data.deliveryAddress,
         pickupLocation: businessInfo.business_address,
         businessEmail: businessInfo.business_email,
+        businessName: businessInfo.business_name,
+        headerMessage: emailTemplates.confirmation_header,
+        footerMessage,
         timeSlot: data.timeSlot,
         estimatedTime: data.timeSlot
           ? `${data.timeSlot.windowStart} - ${data.timeSlot.windowEnd}`

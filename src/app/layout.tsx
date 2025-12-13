@@ -3,6 +3,7 @@ import { Fraunces, DM_Sans, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/cart-context";
 import { Toaster } from "@/components/ui/sonner";
+import { DynamicTheme } from "@/components/theme/dynamic-theme";
 
 // Display font with character - soft serifs, warm personality
 const fraunces = Fraunces({
@@ -39,6 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${fraunces.variable} ${dmSans.variable} ${cormorant.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Dynamic theme colors from admin settings */}
+        <DynamicTheme />
+      </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <CartProvider>
           {children}
