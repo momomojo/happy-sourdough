@@ -124,7 +124,7 @@ export function AddToCartForm({
       />
 
       {/* Special Instructions (e.g. Cake Inscription) */}
-      {category === 'cake' && (
+      {category?.toLowerCase() === 'cake' && (
         <div className="space-y-2">
           <Label htmlFor="special-instructions" className="flex items-center gap-2">
             <Pencil className="h-4 w-4" />

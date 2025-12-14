@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Gift, ArrowRight, Loader2, Star } from 'lucide-react';
+import { Trophy, Gift, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { redeemPoints } from '@/actions/loyalty-actions'; // We'll need a server action for this to be called from client
+import { redeemPoints } from '@/actions/loyalty-actions';
 
 // Define props based on what we'll pass from the server page
 interface LoyaltyDashboardProps {
@@ -18,6 +19,7 @@ interface LoyaltyDashboardProps {
 
 export function LoyaltyDashboard({ pointsBalance, lifetimePoints, tier }: LoyaltyDashboardProps) {
     const [isRedeeming, setIsRedeeming] = useState(false);
+    const router = useRouter();
 
     // Calculate progress to next tier
     // Bronze: 0-499, Silver: 500-1499, Gold: 1500+
@@ -44,15 +46,14 @@ export function LoyaltyDashboard({ pointsBalance, lifetimePoints, tier }: Loyalt
             const result = await redeemPoints(100); // Redeem 100 points for $5
             if (result.success && result.code) {
                 toast.success(`Reward Redeemed! Code: ${result.code}`, {
-                    description: 'Copy this code to use at checkout via the code manager.',
+                    description: 'Copy this code to use at checkout.',
                     duration: 10000,
                 });
-                // Ideally we refresh the page data here
-                // router.refresh() 
+                router.refresh(); 
             } else {
                 toast.error('Redemption failed: ' + result.error);
             }
-        } catch (error) {
+        } catch {
             toast.error('An error occurred');
         } finally {
             setIsRedeeming(false);

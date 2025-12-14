@@ -16,7 +16,6 @@ import {
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -39,7 +38,7 @@ const formSchema = z.object({
     state: z.string().min(2, 'State must be at least 2 characters'),
     zip: z.string().min(5, 'ZIP code must be at least 5 characters'),
     instructions: z.string().optional().nullable(),
-    sort_order: z.preprocess((val) => Number(val), z.number().min(0)).default(0),
+    sort_order: z.coerce.number().min(0).default(0),
     is_active: z.boolean().default(true),
 });
 
@@ -55,6 +54,7 @@ export function PickupLocationDialog({ mode, location }: PickupLocationDialogPro
     const router = useRouter();
 
     const form = useForm<PickupLocationFormValues>({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolver: zodResolver(formSchema) as any,
         defaultValues: {
             name: location?.name || '',
@@ -87,7 +87,6 @@ export function PickupLocationDialog({ mode, location }: PickupLocationDialogPro
                     toast.error('Failed to create location: ' + result.error);
                 }
             } else {
-                if (!location?.id) return;
                 if (!location?.id) return;
                 const updateData: Partial<PickupLocation> = {
                     ...values,

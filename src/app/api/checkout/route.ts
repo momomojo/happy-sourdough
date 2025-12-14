@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         unit_price: serverSidePrice,
         total_price: serverSidePrice * item.quantity,
-        special_instructions: null,
+        special_instructions: item.special_instructions || null,
       };
     });
 
