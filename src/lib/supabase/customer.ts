@@ -56,7 +56,7 @@ export async function addAddress(
   const supabase = createBrowserClient();
 
   // If this is the default address, unset all other defaults first
-  if (address.is_default) {
+  if (address.is_default && address.user_id) {
     await supabase
       .from('customer_addresses')
       .update({ is_default: false } as never)

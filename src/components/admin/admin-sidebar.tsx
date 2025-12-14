@@ -12,6 +12,7 @@ import {
   Menu,
   Settings,
   Percent,
+  Store,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -47,6 +48,11 @@ const navigation = [
     name: 'Zones',
     href: '/admin/zones',
     icon: MapPin,
+  },
+  {
+    name: 'Pickup',
+    href: '/admin/pickup',
+    icon: Store,
   },
   {
     name: 'Settings',

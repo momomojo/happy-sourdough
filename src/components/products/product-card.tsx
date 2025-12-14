@@ -11,7 +11,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   // Get the lowest price from variants (base_price + price_adjustment)
   const minPrice = product.variants.length > 0
-    ? Math.min(...product.variants.map((v) => product.base_price + v.price_adjustment))
+    ? Math.min(...product.variants.map((v) => product.base_price + (v.price_adjustment ?? 0)))
     : product.base_price;
 
   // Format price (assuming prices are in dollars, not cents)

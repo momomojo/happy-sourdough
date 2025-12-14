@@ -100,7 +100,8 @@ export async function POST(
     }
 
     // BUSINESS RULE: Check if order can be cancelled
-    if (!CANCELLABLE_STATUSES.includes(order.status)) {
+    const orderStatus = (order.status ?? 'received') as OrderStatus;
+    if (!CANCELLABLE_STATUSES.includes(orderStatus)) {
       const statusMessages: Record<string, string> = {
         baking: 'Cannot cancel order after baking has started',
         decorating: 'Cannot cancel order - already in decorating stage',
@@ -115,8 +116,8 @@ export async function POST(
 
       return NextResponse.json(
         {
-          error: statusMessages[order.status] || 'Cannot cancel order at this stage',
-          currentStatus: order.status
+          error: statusMessages[orderStatus] || 'Cannot cancel order at this stage',
+          currentStatus: orderStatus
         },
         { status: 400 }
       );

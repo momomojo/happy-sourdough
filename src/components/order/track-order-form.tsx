@@ -11,6 +11,7 @@ import { OrderStatusTracker } from '@/components/order/order-status-tracker';
 import { OrderDetails } from '@/components/order/order-details';
 import { trackOrderByNumberAndEmail } from '@/lib/supabase/track-order';
 import type { OrderWithDetails } from '@/lib/supabase/orders';
+import type { OrderStatus } from '@/types/database';
 
 export function TrackOrderForm() {
   const [orderNumber, setOrderNumber] = useState('');
@@ -85,10 +86,13 @@ export function TrackOrderForm() {
           {/* Left Column - Status Tracker */}
           <div className="lg:col-span-1">
             <OrderStatusTracker
-              currentStatus={order.status}
-              deliveryType={order.fulfillment_type}
+              currentStatus={(order.status ?? 'received') as OrderStatus}
+              deliveryType={(order.fulfillment_type ?? 'pickup') as 'pickup' | 'delivery'}
               hasDecorating={hasDecorating}
-              statusHistory={order.status_history}
+              statusHistory={(order.status_history ?? []).map(h => ({
+                status: h.status as OrderStatus,
+                created_at: h.created_at ?? new Date().toISOString()
+              }))}
             />
           </div>
 

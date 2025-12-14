@@ -119,15 +119,15 @@ export async function PATCH(
           // Format delivery address for email
           let deliveryAddressStr: string | undefined;
           if (order.delivery_address) {
-            const addr = order.delivery_address;
-            deliveryAddressStr = `${addr.street}${addr.apt ? `, ${addr.apt}` : ''}, ${addr.city}, ${addr.state} ${addr.zip}`;
+            const addr = order.delivery_address as { street?: string; apt?: string; city?: string; state?: string; zip?: string };
+            deliveryAddressStr = `${addr.street ?? ''}${addr.apt ? `, ${addr.apt}` : ''}, ${addr.city ?? ''}, ${addr.state ?? ''} ${addr.zip ?? ''}`;
           }
 
           await sendOrderReadyEmail({
             orderNumber: order.order_number,
             customerName: order.customer_name,
             customerEmail: order.customer_email,
-            deliveryType: order.fulfillment_type,
+            deliveryType: order.fulfillment_type as 'pickup' | 'delivery',
             items,
             deliveryAddress: deliveryAddressStr,
             deliveryETA: order.delivery_window,
@@ -143,7 +143,7 @@ export async function PATCH(
             customerName: order.customer_name,
             customerEmail: order.customer_email,
             status: status,
-            deliveryType: order.fulfillment_type,
+            deliveryType: order.fulfillment_type as 'pickup' | 'delivery',
             estimatedTime: order.delivery_window,
           });
         }

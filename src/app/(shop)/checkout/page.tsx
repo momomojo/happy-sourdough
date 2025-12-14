@@ -1,18 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckoutForm } from '@/components/checkout/checkout-form';
 import { OrderSummary } from '@/components/checkout/order-summary';
 import { Separator } from '@/components/ui/separator';
+import { createClient } from '@/lib/supabase/client';
+import { fetchLoyaltyStatus } from '@/actions/loyalty-actions';
 
 export default function CheckoutPage() {
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [userTier, setUserTier] = useState<'bronze' | 'silver' | 'gold'>('bronze');
   const [discountData, setDiscountData] = useState<{
     discountCodeId: string;
     code: string;
     discountAmount: number;
     discountType: string;
   } | null>(null);
+
+  useEffect(() => {
+    const loadLoyalty = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const status = await fetchLoyaltyStatus(user.id);
+        if (status) {
+          setUserTier(status.tier);
+        }
+      }
+    };
+    loadLoyalty();
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -31,6 +48,7 @@ export default function CheckoutPage() {
           <div className="lg:sticky lg:top-20">
             <OrderSummary
               deliveryFee={deliveryFee}
+              userTier={userTier}
               onDiscountApplied={setDiscountData}
             />
           </div>

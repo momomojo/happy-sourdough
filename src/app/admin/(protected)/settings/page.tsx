@@ -190,7 +190,21 @@ export default function SettingsPage() {
       data?.forEach((row) => {
         const key = row.key as keyof BusinessSettings;
         if (key in loadedSettings) {
-          (loadedSettings as Record<string, unknown>)[key] = row.value;
+          // Special handling for business_address which may be stored as an object
+          if (key === 'business_address') {
+            const value = row.value;
+            if (typeof value === 'string') {
+              loadedSettings.business_address = value;
+            } else if (typeof value === 'object' && value !== null) {
+              // Convert address object to string
+              const addr = value as { street?: string; city?: string; state?: string; zip?: string };
+              loadedSettings.business_address = [addr.street, addr.city, addr.state, addr.zip]
+                .filter(Boolean)
+                .join(', ');
+            }
+          } else {
+            (loadedSettings as Record<string, unknown>)[key] = row.value;
+          }
         }
       });
 

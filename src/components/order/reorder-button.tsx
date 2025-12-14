@@ -23,8 +23,9 @@ export function ReorderButton({ items }: ReorderButtonProps) {
     setIsLoading(true);
 
     try {
-      // Add all items to cart
+      // Add all items to cart (skip items without product_id)
       items.forEach((item) => {
+        if (!item.product_id) return;
         addItem({
           productId: item.product_id,
           variantId: item.product_variant_id || item.product_id,

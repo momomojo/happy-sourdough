@@ -70,7 +70,7 @@ export default async function DiscountsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {discountCodes.reduce((sum, code) => sum + code.current_uses, 0)}
+              {discountCodes.reduce((sum, code) => sum + (code.current_uses ?? 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all codes

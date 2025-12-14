@@ -309,6 +309,7 @@ export async function POST(request: NextRequest) {
       internal_notes: null,
       confirmed_at: null,
       completed_at: null,
+      cancelled_at: null,
     };
 
     const { data: order, error: orderError } = await (supabase

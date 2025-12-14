@@ -47,7 +47,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import type { ProductCategory } from '@/types/database';
 import {
   getAdminProducts,
   createProductWithStripeSync,
@@ -62,6 +61,8 @@ import {
   type ProductWithVariants,
 } from '@/lib/supabase/admin/products';
 import { ProductImageManager, type ProductImageData } from '@/components/admin/products/product-image-manager';
+
+type ProductCategory = 'bread' | 'pastry' | 'cake' | 'cookie' | 'seasonal' | 'merchandise';
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: 'bread', label: 'Bread' },
@@ -94,12 +95,15 @@ interface ProductFormData {
   lead_time_hours: number;
 }
 
+
 interface VariantFormData {
   name: string;
   price_adjustment: number;
   sku: string;
   is_available: boolean;
   is_default: boolean;
+  track_inventory: boolean;
+  inventory_count: number;
 }
 
 const defaultProductForm: ProductFormData = {
@@ -121,6 +125,8 @@ const defaultVariantForm: VariantFormData = {
   sku: '',
   is_available: true,
   is_default: false,
+  track_inventory: false,
+  inventory_count: 0,
 };
 
 export default function ProductsPage() {
@@ -186,13 +192,13 @@ export default function ProductsPage() {
         name: product.name,
         slug: product.slug,
         description: product.description || '',
-        category: product.category,
+        category: (product.category as ProductCategory) || 'bread',
         base_price: product.base_price,
         image_url: product.image_url || '',
         gallery_urls: product.gallery_urls || [],
-        is_available: product.is_available,
-        is_featured: product.is_featured,
-        lead_time_hours: product.lead_time_hours,
+        is_available: product.is_available === null ? true : product.is_available,
+        is_featured: product.is_featured ?? false,
+        lead_time_hours: product.lead_time_hours ?? 0,
       });
     } else {
       setEditingProduct(null);
@@ -225,8 +231,8 @@ export default function ProductsPage() {
             lead_time_hours: productForm.lead_time_hours,
           },
           {
-            stripeProductId: editingProduct.stripe_product_id,
-            stripePriceId: editingProduct.stripe_price_id,
+            stripeProductId: (editingProduct as any).stripe_product_id,
+            stripePriceId: (editingProduct as any).stripe_price_id,
           }
         );
         toast.success('Product updated successfully');
@@ -262,7 +268,7 @@ export default function ProductsPage() {
       setSaving(true);
       await deleteProductWithStripeArchive(
         deletingProduct.id,
-        deletingProduct.stripe_product_id
+        (deletingProduct as any).stripe_product_id
       );
       toast.success('Product deleted successfully');
       setDeleteDialogOpen(false);
@@ -299,7 +305,7 @@ export default function ProductsPage() {
   };
 
   // Variant handlers
-  const handleOpenVariantDialog = (product: ProductWithVariants, variant?: { id: string; name: string; price_adjustment: number; sku: string | null; is_available: boolean; is_default: boolean }) => {
+  const handleOpenVariantDialog = (product: ProductWithVariants, variant?: { id: string; name: string; price_adjustment: number; sku: string | null; is_available: boolean; is_default: boolean; track_inventory: boolean | null; inventory_count: number | null }) => {
     setVariantProduct(product);
     if (variant) {
       setEditingVariant({ id: variant.id });
@@ -309,6 +315,8 @@ export default function ProductsPage() {
         sku: variant.sku || '',
         is_available: variant.is_available,
         is_default: variant.is_default,
+        track_inventory: variant.track_inventory || false,
+        inventory_count: variant.inventory_count || 0,
       });
     } else {
       setEditingVariant(null);
@@ -332,6 +340,8 @@ export default function ProductsPage() {
           sku: variantForm.sku || null,
           is_available: variantForm.is_available,
           is_default: variantForm.is_default,
+          track_inventory: variantForm.track_inventory,
+          inventory_count: variantForm.inventory_count,
         });
         toast.success('Variant updated successfully');
       } else {
@@ -342,6 +352,8 @@ export default function ProductsPage() {
           sku: variantForm.sku || undefined,
           is_available: variantForm.is_available,
           is_default: variantForm.is_default,
+          track_inventory: variantForm.track_inventory,
+          inventory_count: variantForm.inventory_count,
         });
         toast.success('Variant created successfully');
       }
@@ -517,7 +529,7 @@ export default function ProductsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={CATEGORY_COLORS[product.category]}>
+                      <Badge className={CATEGORY_COLORS[product.category as ProductCategory]}>
                         {product.category}
                       </Badge>
                     </TableCell>
@@ -532,10 +544,10 @@ export default function ProductsPage() {
                           product.variants.slice(0, 2).map((v) => (
                             <Badge key={v.id} variant="outline" className="text-xs">
                               {v.name}
-                              {v.price_adjustment !== 0 && (
-                                <span className="ml-1">
-                                  {v.price_adjustment > 0 ? '+' : ''}
-                                  {formatPrice(v.price_adjustment)}
+                              {(v.price_adjustment ?? 0) != 0 && (
+                                <span className="ml-1 text-muted-foreground">
+                                  {(v.price_adjustment ?? 0) > 0 ? '+' : ''}$
+                                  {(v.price_adjustment ?? 0).toFixed(2)}
                                 </span>
                               )}
                             </Badge>
@@ -810,8 +822,8 @@ export default function ProductsPage() {
                       <div>
                         <div className="font-medium">{variant.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {variant.price_adjustment >= 0 ? '+' : ''}
-                          {formatPrice(variant.price_adjustment)}
+                          {(variant.price_adjustment ?? 0) >= 0 ? '+' : ''}
+                          {formatPrice(variant.price_adjustment ?? 0)}
                           {variant.sku && ` • SKU: ${variant.sku}`}
                           {variant.is_default && ' • Default'}
                         </div>
@@ -821,7 +833,15 @@ export default function ProductsPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleOpenVariantDialog(editingProduct, variant)}
+                          onClick={() => handleOpenVariantDialog(editingProduct, {
+                            ...variant,
+                            price_adjustment: variant.price_adjustment ?? 0,
+                            sku: variant.sku,
+                            is_available: variant.is_available ?? true,
+                            is_default: variant.is_default ?? false,
+                            track_inventory: variant.track_inventory,
+                            inventory_count: variant.inventory_count,
+                          })}
                         >
                           <Pencil className="h-3 w-3" />
                         </Button>
@@ -933,6 +953,35 @@ export default function ProductsPage() {
                   }
                   placeholder="BREAD-001-L"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                <div className="flex items-center space-x-2 pt-8">
+                  <Switch
+                    id="track_inventory"
+                    checked={variantForm.track_inventory}
+                    onCheckedChange={(checked) =>
+                      setVariantForm({ ...variantForm, track_inventory: checked })
+                    }
+                  />
+                  <Label htmlFor="track_inventory">Track Inventory</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="inventory_count">Inventory Count</Label>
+                  <Input
+                    id="inventory_count"
+                    type="number"
+                    min="0"
+                    disabled={!variantForm.track_inventory}
+                    value={variantForm.inventory_count}
+                    onChange={(e) =>
+                      setVariantForm({
+                        ...variantForm,
+                        inventory_count: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
               </div>
             </div>
 

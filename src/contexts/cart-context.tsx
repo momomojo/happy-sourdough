@@ -12,6 +12,7 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   imageUrl?: string;
+  special_instructions?: string;
 }
 
 interface CartContextType {
@@ -63,11 +64,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       category: 'cart',
       message: `Add item: ${newItem.productName}`,
       level: 'info',
-      data: { productId: newItem.productId, variantId: newItem.variantId, quantity },
+      data: { productId: newItem.productId, variantId: newItem.variantId, quantity, special_instructions: newItem.special_instructions },
     });
 
     setItems(current => {
-      const existingIndex = current.findIndex(item => item.variantId === newItem.variantId);
+      const existingIndex = current.findIndex(item =>
+        item.variantId === newItem.variantId &&
+        // Only merge items if they have the same special instructions
+        item.special_instructions === newItem.special_instructions
+      );
 
       if (existingIndex > -1) {
         // Update existing item

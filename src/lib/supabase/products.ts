@@ -47,7 +47,7 @@ export async function getProducts(category?: string): Promise<ProductWithVariant
     const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     } as ProductWithVariants;
   });
 }
@@ -221,7 +221,7 @@ export async function searchProducts(query: string): Promise<ProductWithVariants
     const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     } as ProductWithVariants;
   });
 }
@@ -260,7 +260,7 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
     const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     } as ProductWithVariants;
   });
 }

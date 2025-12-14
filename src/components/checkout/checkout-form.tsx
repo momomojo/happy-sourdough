@@ -21,6 +21,7 @@ const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Please enter your full name'),
   phone: z.string().min(10, 'Please enter a valid phone number'),
   fulfillmentType: z.enum(['delivery', 'pickup']),
+  pickupLocationId: z.string().optional(),
   deliveryAddress: z
     .object({
       street: z.string().min(1, 'Street address is required'),
@@ -258,8 +259,8 @@ export function CheckoutForm({ onDeliveryFeeChange, discountData }: CheckoutForm
                   index < currentStep
                     ? 'bg-primary border-primary text-primary-foreground'
                     : index === currentStep
-                    ? 'border-primary text-primary'
-                    : 'border-muted text-muted-foreground'
+                      ? 'border-primary text-primary'
+                      : 'border-muted text-muted-foreground'
                 )}
               >
                 {index < currentStep ? (

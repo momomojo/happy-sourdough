@@ -135,7 +135,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     return null;
   }
 
-  return adminUser as AdminUser;
+  return adminUser as unknown as AdminUser;
 }
 
 /**

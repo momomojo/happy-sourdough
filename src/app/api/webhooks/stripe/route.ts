@@ -585,7 +585,7 @@ async function sendConfirmationEmail(orderId: string) {
   // Format delivery address as string for email
   let deliveryAddressStr: string | undefined;
   if (order.delivery_address) {
-    const addr = order.delivery_address;
+    const addr = order.delivery_address as { street?: string; apt?: string; city?: string; state?: string; zip?: string };
     deliveryAddressStr = [
       addr.street,
       addr.apt,
@@ -602,10 +602,10 @@ async function sendConfirmationEmail(orderId: string) {
     customerEmail,
     items: emailItems,
     subtotal: order.subtotal,
-    deliveryFee: order.delivery_fee,
-    tax: order.tax_amount,
+    deliveryFee: order.delivery_fee ?? 0,
+    tax: order.tax_amount ?? 0,
     total: order.total,
-    deliveryType: order.fulfillment_type,
+    deliveryType: order.fulfillment_type as 'pickup' | 'delivery',
     deliveryAddress: deliveryAddressStr,
     timeSlot,
   });

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 interface OrderSummaryProps {
   deliveryFee?: number;
   taxRate?: number;
+  userTier?: 'bronze' | 'silver' | 'gold';
   onDiscountApplied?: (discountData: {
     discountCodeId: string;
     code: string;
@@ -20,7 +21,7 @@ interface OrderSummaryProps {
   } | null) => void;
 }
 
-export function OrderSummary({ deliveryFee = 0, taxRate = 0.08, onDiscountApplied }: OrderSummaryProps) {
+export function OrderSummary({ deliveryFee = 0, taxRate = 0.08, userTier = 'bronze', onDiscountApplied }: OrderSummaryProps) {
   const { items, subtotal } = useCart();
   const [discountCode, setDiscountCode] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -226,6 +227,14 @@ export function OrderSummary({ deliveryFee = 0, taxRate = 0.08, onDiscountApplie
         <div className="flex justify-between text-lg font-bold">
           <span>Total</span>
           <span>${total.toFixed(2)}</span>
+        </div>
+
+        {/* Loyalty Points */}
+        <div className="flex items-center justify-between text-xs bg-primary/5 p-2 rounded text-muted-foreground">
+          <span>Points to be earned</span>
+          <span className="font-semibold text-primary">
+            {Math.floor((subtotal - discount) * (userTier === 'gold' ? 1.5 : userTier === 'silver' ? 1.25 : 1))} pts
+          </span>
         </div>
 
         {/* Free Delivery Banner */}

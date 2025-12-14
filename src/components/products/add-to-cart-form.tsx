@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { VariantSelector } from './variant-selector';
 import { useCart } from '@/contexts/cart-context';
 import type { ProductVariant } from '@/types/database';
-import { ShoppingCart, Plus, Minus, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, AlertCircle, Pencil } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AddToCartFormProps {
   productId: string;
@@ -17,6 +18,7 @@ interface AddToCartFormProps {
   imageUrl?: string;
   maxPerOrder?: number | null;
   leadTimeHours?: number;
+  category: string;
 }
 
 export function AddToCartForm({
@@ -27,6 +29,7 @@ export function AddToCartForm({
   imageUrl,
   maxPerOrder,
   leadTimeHours,
+  category,
 }: AddToCartFormProps) {
   const { addItem, items } = useCart();
 
@@ -35,6 +38,7 @@ export function AddToCartForm({
 
   const [selectedVariantId, setSelectedVariantId] = useState(defaultVariant?.id || '');
   const [quantity, setQuantity] = useState(1);
+  const [specialInstructions, setSpecialInstructions] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
@@ -60,7 +64,7 @@ export function AddToCartForm({
     if (!selectedVariant) return;
 
     // Check inventory if tracking is enabled
-    if (selectedVariant.track_inventory && selectedVariant.inventory_count !== null) {
+    if ((selectedVariant.track_inventory ?? false) && selectedVariant.inventory_count !== null) {
       if (selectedVariant.inventory_count < quantity) {
         return; // Will show error message below
       }
@@ -74,13 +78,15 @@ export function AddToCartForm({
         variantId: selectedVariant.id,
         productName,
         variantName: selectedVariant.name,
-        unitPrice: basePrice + selectedVariant.price_adjustment,
+        unitPrice: basePrice + (selectedVariant.price_adjustment ?? 0),
         imageUrl,
         quantity,
+        special_instructions: specialInstructions || undefined,
       });
 
-      // Reset quantity after successful add
+      // Reset form
       setQuantity(1);
+      setSpecialInstructions('');
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -99,13 +105,13 @@ export function AddToCartForm({
   }
 
   // Check stock availability
-  const hasInsufficientStock = selectedVariant?.track_inventory &&
-    selectedVariant.inventory_count !== null &&
-    selectedVariant.inventory_count < quantity;
+  const hasInsufficientStock = (selectedVariant?.track_inventory ?? false) &&
+    selectedVariant?.inventory_count !== null &&
+    (selectedVariant?.inventory_count ?? 0) < quantity;
 
-  const isOutOfStock = selectedVariant?.track_inventory &&
-    selectedVariant.inventory_count !== null &&
-    selectedVariant.inventory_count <= 0;
+  const isOutOfStock = (selectedVariant?.track_inventory ?? false) &&
+    selectedVariant?.inventory_count !== null &&
+    (selectedVariant?.inventory_count ?? 0) <= 0;
 
   return (
     <div className="space-y-6">
@@ -116,6 +122,28 @@ export function AddToCartForm({
         onVariantChange={setSelectedVariantId}
         basePrice={basePrice}
       />
+
+      {/* Special Instructions (e.g. Cake Inscription) */}
+      {category === 'cake' && (
+        <div className="space-y-2">
+          <Label htmlFor="special-instructions" className="flex items-center gap-2">
+            <Pencil className="h-4 w-4" />
+            Inscription / Special Instructions
+          </Label>
+          <Textarea
+            id="special-instructions"
+            placeholder="Happy Birthday! (Max 50 chars)"
+            value={specialInstructions}
+            onChange={(e) => setSpecialInstructions(e.target.value)}
+            maxLength={50}
+            className="resize-none"
+            rows={2}
+          />
+          <p className="text-xs text-muted-foreground text-right border-t-0 mt-1">
+            {specialInstructions.length}/50 characters
+          </p>
+        </div>
+      )}
 
       {/* Lead Time Notice */}
       {leadTimeHours && leadTimeHours > 0 && (
@@ -168,7 +196,7 @@ export function AddToCartForm({
             variant="outline"
             size="icon"
             onClick={() => handleQuantityChange(quantity - 1)}
-            disabled={quantity <= 1 || isOutOfStock}
+            disabled={quantity <= 1 || (isOutOfStock ?? false)}
           >
             <Minus className="h-4 w-4" />
           </Button>
@@ -181,7 +209,7 @@ export function AddToCartForm({
             value={quantity}
             onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
             className="w-20 text-center"
-            disabled={isOutOfStock}
+            disabled={isOutOfStock ?? false}
           />
 
           <Button
@@ -192,9 +220,9 @@ export function AddToCartForm({
             disabled={
               quantity >= remainingAllowed ||
               isOutOfStock ||
-              (selectedVariant?.track_inventory &&
-                selectedVariant.inventory_count !== null &&
-                quantity >= selectedVariant.inventory_count)
+              ((selectedVariant?.track_inventory ?? false) &&
+                selectedVariant?.inventory_count !== null &&
+                quantity >= (selectedVariant?.inventory_count ?? 0))
             }
           >
             <Plus className="h-4 w-4" />
@@ -213,7 +241,7 @@ export function AddToCartForm({
             <span className="text-sm text-gray-600">Total Price:</span>
             <div className="text-right">
               <div className="text-2xl font-bold">
-                ${((basePrice + selectedVariant.price_adjustment) * quantity).toFixed(2)}
+                ${((basePrice + (selectedVariant.price_adjustment ?? 0)) * quantity).toFixed(2)}
               </div>
             </div>
           </div>
@@ -226,8 +254,8 @@ export function AddToCartForm({
         disabled={
           isAdding ||
           !selectedVariant ||
-          isOutOfStock ||
-          hasInsufficientStock ||
+          (isOutOfStock ?? false) ||
+          (hasInsufficientStock ?? false) ||
           remainingAllowed <= 0
         }
         className="w-full"
@@ -236,8 +264,8 @@ export function AddToCartForm({
         <ShoppingCart className="mr-2 h-5 w-5" />
         {isAdding ? 'Adding...' :
           isOutOfStock ? 'Out of Stock' :
-          remainingAllowed <= 0 ? 'Max Quantity Reached' :
-          'Add to Cart'}
+            remainingAllowed <= 0 ? 'Max Quantity Reached' :
+              'Add to Cart'}
       </Button>
 
       {/* Prep Time Notice */}

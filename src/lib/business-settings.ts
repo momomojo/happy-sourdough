@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 import type { BusinessInfo, OperatingHours, WebsiteContent, SocialLinks, Branding, EmailTemplates } from '@/types/database';
 
 // Default values as fallback (should match migration 013)
@@ -71,16 +71,13 @@ export async function getBusinessInfo(): Promise<BusinessInfo> {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     // Fetch all business info settings at once
-    const { data, error } = await (supabase
-      .from('business_settings') as ReturnType<typeof supabase.from>)
+    const { data, error } = await supabase
+      .from('business_settings')
       .select('key, value')
-      .in('key', ['business_name', 'business_phone', 'business_email', 'business_address']) as {
-      data: Array<{ key: string; value: unknown }> | null;
-      error: unknown;
-    };
+      .in('key', ['business_name', 'business_phone', 'business_email', 'business_address']);
 
     if (error || !data || data.length === 0) {
       console.warn('Business settings not found, using defaults');
@@ -99,9 +96,27 @@ export async function getBusinessInfo(): Promise<BusinessInfo> {
 
     data.forEach((setting) => {
       if (setting.key in businessInfo) {
-        // Extract string value from JSONB (it's stored as a JSON string)
-        const value = setting.value as string;
-        businessInfo[setting.key as keyof BusinessInfo] = value;
+        // Handle business_address which may be stored as an object {street, city, state, zip}
+        if (setting.key === 'business_address') {
+          const value = setting.value;
+          if (typeof value === 'string') {
+            // Already a string, use as-is
+            businessInfo.business_address = value;
+          } else if (typeof value === 'object' && value !== null) {
+            // Convert address object to string
+            const addr = value as { street?: string; city?: string; state?: string; zip?: string };
+            businessInfo.business_address = [addr.street, addr.city, addr.state, addr.zip]
+              .filter(Boolean)
+              .join(', ');
+          }
+          // If neither string nor object, keep the default value
+        } else {
+          // Extract string value from JSONB for other fields
+          const value = setting.value;
+          if (typeof value === 'string') {
+            businessInfo[setting.key as keyof BusinessInfo] = value;
+          }
+        }
       }
     });
 
@@ -125,13 +140,13 @@ export async function getOperatingHours(): Promise<OperatingHours> {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
-    const { data, error } = await (supabase
-      .from('business_settings') as ReturnType<typeof supabase.from>)
+    const { data, error } = await supabase
+      .from('business_settings')
       .select('value')
       .eq('key', 'operating_hours')
-      .single() as { data: { value: unknown } | null; error: unknown };
+      .single();
 
     if (error || !data) {
       console.warn('Operating hours not found, using defaults');
@@ -140,7 +155,7 @@ export async function getOperatingHours(): Promise<OperatingHours> {
       return DEFAULT_OPERATING_HOURS;
     }
 
-    cachedOperatingHours = data.value as OperatingHours;
+    cachedOperatingHours = data.value as unknown as OperatingHours;
     cacheTimestamp = Date.now();
     return cachedOperatingHours;
   } catch (err) {
@@ -212,12 +227,12 @@ export async function getWebsiteContent(): Promise<WebsiteContent> {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await (supabase
-      .from('business_settings') as ReturnType<typeof supabase.from>)
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from('business_settings')
       .select('value')
       .eq('key', 'website_content')
-      .single() as { data: { value: unknown } | null; error: unknown };
+      .single();
 
     if (error || !data) {
       console.warn('Website content not found, using defaults');
@@ -226,7 +241,7 @@ export async function getWebsiteContent(): Promise<WebsiteContent> {
       return DEFAULT_WEBSITE_CONTENT;
     }
 
-    cachedWebsiteContent = data.value as WebsiteContent;
+    cachedWebsiteContent = data.value as unknown as WebsiteContent;
     cacheTimestamp = Date.now();
     return cachedWebsiteContent;
   } catch (err) {
@@ -244,12 +259,12 @@ export async function getSocialLinks(): Promise<SocialLinks> {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await (supabase
-      .from('business_settings') as ReturnType<typeof supabase.from>)
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from('business_settings')
       .select('value')
       .eq('key', 'social_links')
-      .single() as { data: { value: unknown } | null; error: unknown };
+      .single();
 
     if (error || !data) {
       console.warn('Social links not found, using defaults');
@@ -258,7 +273,7 @@ export async function getSocialLinks(): Promise<SocialLinks> {
       return DEFAULT_SOCIAL_LINKS;
     }
 
-    cachedSocialLinks = data.value as SocialLinks;
+    cachedSocialLinks = data.value as unknown as SocialLinks;
     cacheTimestamp = Date.now();
     return cachedSocialLinks;
   } catch (err) {
@@ -276,12 +291,12 @@ export async function getBranding(): Promise<Branding> {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await (supabase
-      .from('business_settings') as ReturnType<typeof supabase.from>)
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from('business_settings')
       .select('value')
       .eq('key', 'branding')
-      .single() as { data: { value: unknown } | null; error: unknown };
+      .single();
 
     if (error || !data) {
       console.warn('Branding not found, using defaults');
@@ -290,7 +305,7 @@ export async function getBranding(): Promise<Branding> {
       return DEFAULT_BRANDING;
     }
 
-    cachedBranding = data.value as Branding;
+    cachedBranding = data.value as unknown as Branding;
     cacheTimestamp = Date.now();
     return cachedBranding;
   } catch (err) {
@@ -308,12 +323,12 @@ export async function getEmailTemplates(): Promise<EmailTemplates> {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await (supabase
-      .from('business_settings') as ReturnType<typeof supabase.from>)
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from('business_settings')
       .select('value')
       .eq('key', 'email_templates')
-      .single() as { data: { value: unknown } | null; error: unknown };
+      .single();
 
     if (error || !data) {
       console.warn('Email templates not found, using defaults');
@@ -322,7 +337,7 @@ export async function getEmailTemplates(): Promise<EmailTemplates> {
       return DEFAULT_EMAIL_TEMPLATES;
     }
 
-    cachedEmailTemplates = data.value as EmailTemplates;
+    cachedEmailTemplates = data.value as unknown as EmailTemplates;
     cacheTimestamp = Date.now();
     return cachedEmailTemplates;
   } catch (err) {

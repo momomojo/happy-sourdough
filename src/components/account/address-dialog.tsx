@@ -49,7 +49,7 @@ export function AddressDialog({
         state: address.state,
         zip: address.zip,
         delivery_instructions: address.delivery_instructions || '',
-        is_default: address.is_default,
+        is_default: address.is_default ?? false,
       });
     } else {
       setFormData({

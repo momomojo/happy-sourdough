@@ -120,7 +120,7 @@ export function TimeSlotPicker({ deliveryType, onSlotSelect, hasCake = false }: 
   };
 
   const getSlotsRemaining = (slot: TimeSlot) => {
-    return slot.max_orders - slot.current_orders;
+    return (slot.max_orders ?? 0) - (slot.current_orders ?? 0);
   };
 
   return (

@@ -32,7 +32,7 @@ export async function getAdminProducts(): Promise<ProductWithVariants[]> {
     const { variants, ...product } = row;
     return {
       ...product,
-      variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
+      variants: (variants || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     } as ProductWithVariants;
   });
 }
@@ -61,7 +61,7 @@ export async function getProductById(id: string): Promise<ProductWithVariants | 
   const { variants, ...product } = row;
   return {
     ...product,
-    variants: (variants || []).sort((a, b) => a.sort_order - b.sort_order),
+    variants: (variants || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
   } as ProductWithVariants;
 }
 
@@ -205,6 +205,8 @@ export async function createVariant(variant: {
   is_available?: boolean;
   is_default?: boolean;
   sort_order?: number;
+  track_inventory?: boolean;
+  inventory_count?: number;
 }): Promise<ProductVariant> {
   const supabase = createClient();
 
@@ -215,6 +217,8 @@ export async function createVariant(variant: {
       is_available: variant.is_available ?? true,
       is_default: variant.is_default ?? false,
       sort_order: variant.sort_order ?? 0,
+      track_inventory: variant.track_inventory ?? false,
+      inventory_count: variant.inventory_count ?? 0,
     } as never)
     .select()
     .single();
@@ -383,7 +387,7 @@ export async function updateProductWithStripeSync(
 
   // Then sync to Stripe if price-relevant fields changed
   const shouldSync = 'name' in updates || 'description' in updates ||
-                     'image_url' in updates || 'base_price' in updates;
+    'image_url' in updates || 'base_price' in updates;
 
   if (shouldSync) {
     try {

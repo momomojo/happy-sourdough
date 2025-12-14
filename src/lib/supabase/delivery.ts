@@ -61,7 +61,7 @@ export async function getAvailableTimeSlots(
 
   // Filter slots that still have capacity
   return (data as TimeSlot[]).filter(
-    (slot) => slot.current_orders < slot.max_orders
+    (slot) => (slot.current_orders ?? 0) < (slot.max_orders ?? 0)
   );
 }
 
@@ -110,7 +110,7 @@ export async function checkSlotAvailability(
   }
 
   const slot = data as TimeSlot;
-  const slotsRemaining = slot.max_orders - slot.current_orders;
+  const slotsRemaining = (slot.max_orders ?? 0) - (slot.current_orders ?? 0);
   const available = slotsRemaining > 0;
 
   return { available, slotsRemaining };
@@ -148,7 +148,7 @@ export async function getTimeSlotsForRange(
   }
 
   return (data as TimeSlot[]).filter(
-    (slot) => slot.current_orders < slot.max_orders
+    (slot) => (slot.current_orders ?? 0) < (slot.max_orders ?? 0)
   );
 }
 

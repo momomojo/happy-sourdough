@@ -16,6 +16,7 @@ export interface CheckoutFormData {
 
   // Delivery/Pickup
   fulfillmentType: 'delivery' | 'pickup';
+  pickupLocationId?: string;
   deliveryAddress?: DeliveryAddress;
   deliveryInstructions?: string;
   deliveryDate: string;

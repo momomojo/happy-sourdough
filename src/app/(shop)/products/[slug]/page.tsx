@@ -161,8 +161,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             basePrice={product.base_price}
             variants={variants}
             imageUrl={product.image_url || undefined}
-            maxPerOrder={product.max_per_order}
-            leadTimeHours={product.lead_time_hours}
+            maxPerOrder={product.max_per_order ?? undefined}
+            leadTimeHours={product.lead_time_hours ?? undefined}
+            category={product.category}
           />
 
           <Separator />
@@ -176,7 +177,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           {/* Lead Time */}
-          {product.lead_time_hours > 0 && (
+          {(product.lead_time_hours ?? 0) > 0 && (
             <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
               <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
               <div>

@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { MarketingPreferences } from '@/components/account/marketing-preferences';
+import { getLoyaltyStatus } from '@/lib/loyalty';
+import { LoyaltyDashboard } from '@/components/account/loyalty-dashboard';
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -20,6 +22,7 @@ export default async function AccountPage() {
 
   // Get customer profile
   const profile = await getCustomerProfile(user.id);
+  const loyaltyStatus = await getLoyaltyStatus(user.id);
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-8">
@@ -79,6 +82,25 @@ export default async function AccountPage() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Loyalty Dashboard */}
+        {loyaltyStatus ? (
+          <LoyaltyDashboard
+            pointsBalance={loyaltyStatus.points_balance}
+            lifetimePoints={loyaltyStatus.lifetime_points}
+            tier={loyaltyStatus.tier}
+          />
+        ) : (
+          <Card className="border-2 border-dashed shadow-sm">
+            <CardHeader>
+              <CardTitle>Join our Loyalty Program</CardTitle>
+              <CardDescription>Start earning points with your next order!</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Make a purchase to activate your rewards account.</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Links */}
         <div className="space-y-6">

@@ -126,9 +126,9 @@ export function ZoneTable({ zones, onEdit, onUpdate }: ZoneTableProps) {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={zone.is_active}
+                      checked={zone.is_active ?? false}
                       onCheckedChange={() =>
-                        handleToggleActive(zone.id, zone.is_active)
+                        handleToggleActive(zone.id, zone.is_active ?? false)
                       }
                       disabled={togglingZones.has(zone.id)}
                     />

@@ -63,7 +63,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -72,6 +73,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
       minute: '2-digit',
     });
   };
+
+  // Type-safe status with fallback
+  const orderStatus = (order.status ?? 'received') as OrderStatus;
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -94,10 +98,10 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <Badge className={STATUS_COLORS[order.status]} variant="default">
-            {STATUS_LABELS[order.status]}
+          <Badge className={STATUS_COLORS[orderStatus]} variant="default">
+            {STATUS_LABELS[orderStatus]}
           </Badge>
-          <OrderStatusUpdate orderId={order.id} currentStatus={order.status} />
+          <OrderStatusUpdate orderId={order.id} currentStatus={orderStatus} />
         </div>
       </div>
 
@@ -147,16 +151,16 @@ export default async function OrderDetailPage({ params }: PageProps) {
                     <span>{formatCurrency(order.subtotal)}</span>
                   </div>
 
-                  {order.delivery_fee > 0 && (
+                  {(order.delivery_fee ?? 0) > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Delivery Fee</span>
-                      <span>{formatCurrency(order.delivery_fee)}</span>
+                      <span>{formatCurrency(order.delivery_fee ?? 0)}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
-                    <span>{formatCurrency(order.tax_amount)}</span>
+                    <span>{formatCurrency(order.tax_amount ?? 0)}</span>
                   </div>
 
                   <Separator />
@@ -188,12 +192,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
               {order.fulfillment_type === 'delivery' && order.delivery_address && (
                 <div>
                   <p className="mb-1 text-sm font-medium text-muted-foreground">Delivery Address</p>
-                  <p className="text-sm">
-                    {order.delivery_address.street}
-                    {order.delivery_address.apt && `, ${order.delivery_address.apt}`}
-                    <br />
-                    {order.delivery_address.city}, {order.delivery_address.state} {order.delivery_address.zip}
-                  </p>
+                  {(() => {
+                    const addr = order.delivery_address as { street?: string; apt?: string; city?: string; state?: string; zip?: string };
+                    return (
+                      <p className="text-sm">
+                        {addr.street}
+                        {addr.apt && `, ${addr.apt}`}
+                        <br />
+                        {addr.city}, {addr.state} {addr.zip}
+                      </p>
+                    );
+                  })()}
                   {order.notes && (
                     <p className="mt-2 text-sm italic text-muted-foreground">
                       Instructions: {order.notes}
@@ -278,18 +287,20 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 {statusHistory.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No status history available</p>
                 ) : (
-                  statusHistory.map((history, index) => (
+                  statusHistory.map((history, index) => {
+                    const historyStatus = (history.status ?? 'received') as OrderStatus;
+                    return (
                     <div key={history.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className={`h-3 w-3 rounded-full ${STATUS_COLORS[history.status]}`} />
+                        <div className={`h-3 w-3 rounded-full ${STATUS_COLORS[historyStatus]}`} />
                         {index < statusHistory.length - 1 && (
                           <div className="w-0.5 flex-1 bg-border mt-1" />
                         )}
                       </div>
                       <div className="flex-1 pb-4">
                         <div className="flex items-center gap-2">
-                          <Badge className={`${STATUS_COLORS[history.status]} text-xs`}>
-                            {STATUS_LABELS[history.status]}
+                          <Badge className={`${STATUS_COLORS[historyStatus]} text-xs`}>
+                            {STATUS_LABELS[historyStatus]}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -300,7 +311,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
                         )}
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </CardContent>

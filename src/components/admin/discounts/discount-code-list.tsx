@@ -101,7 +101,7 @@ export function DiscountCodeList({ discountCodes }: DiscountCodeListProps) {
 
   const isMaxedOut = (code: DiscountCode) => {
     if (code.max_uses === null) return false;
-    return code.current_uses >= code.max_uses;
+    return (code.current_uses ?? 0) >= code.max_uses;
   };
 
   if (discountCodes.length === 0) {
@@ -216,7 +216,7 @@ export function DiscountCodeList({ discountCodes }: DiscountCodeListProps) {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => toggleActive(code.id, code.is_active)}
+                      onClick={() => toggleActive(code.id, code.is_active ?? true)}
                       disabled={togglingId === code.id}
                     >
                       {code.is_active ? (

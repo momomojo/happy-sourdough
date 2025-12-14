@@ -8,6 +8,7 @@ import { OrderDetails } from '@/components/order/order-details';
 import { CancelOrderButton } from '@/components/order/cancel-order-button';
 import { Button } from '@/components/ui/button';
 import { ReorderButton } from '@/components/order/reorder-button';
+import type { OrderStatus } from '@/types/database';
 
 interface OrderDetailPageProps {
   params: Promise<{
@@ -80,10 +81,13 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         {/* Left Column - Status Tracker */}
         <div className="lg:col-span-1">
           <OrderStatusTracker
-            currentStatus={order.status}
-            deliveryType={order.fulfillment_type}
+            currentStatus={(order.status ?? 'received') as 'received' | 'confirmed' | 'baking' | 'decorating' | 'quality_check' | 'ready' | 'out_for_delivery' | 'delivered' | 'picked_up' | 'cancelled' | 'refunded'}
+            deliveryType={order.fulfillment_type as 'pickup' | 'delivery'}
             hasDecorating={hasDecorating}
-            statusHistory={order.status_history}
+            statusHistory={(order.status_history ?? []).map(h => ({
+              status: h.status as OrderStatus,
+              created_at: h.created_at ?? new Date().toISOString()
+            }))}
           />
         </div>
 

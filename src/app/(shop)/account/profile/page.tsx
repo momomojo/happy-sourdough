@@ -562,12 +562,12 @@ export default function CustomerProfilePage() {
                           <div>
                             <p className="font-semibold">Order #{order.order_number}</p>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString()} at{' '}
-                              {new Date(order.created_at).toLocaleTimeString()}
+                              {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'} at{' '}
+                              {order.created_at ? new Date(order.created_at).toLocaleTimeString() : 'N/A'}
                             </p>
                           </div>
-                          <Badge variant={getStatusBadgeVariant(order.status)}>
-                            {order.status.replace('_', ' ')}
+                          <Badge variant={getStatusBadgeVariant(order.status || 'received')}>
+                            {(order.status || 'received').replace('_', ' ')}
                           </Badge>
                         </div>
                         <Separator className="my-4" />

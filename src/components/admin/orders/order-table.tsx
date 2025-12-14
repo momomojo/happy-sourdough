@@ -70,23 +70,24 @@ export function OrderTable({ orders }: OrderTableProps) {
         comparison = a.order_number.localeCompare(b.order_number);
         break;
       case 'created_at':
-        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        comparison = new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
         break;
       case 'total':
         comparison = a.total - b.total;
         break;
       case 'status':
-        comparison = a.status.localeCompare(b.status);
+        comparison = (a.status ?? '').localeCompare(b.status ?? '');
         break;
       case 'fulfillment_type':
-        comparison = a.fulfillment_type.localeCompare(b.fulfillment_type);
+        comparison = (a.fulfillment_type ?? '').localeCompare(b.fulfillment_type ?? '');
         break;
     }
 
     return sortDirection === 'asc' ? comparison : -comparison;
   });
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -167,8 +168,8 @@ export function OrderTable({ orders }: OrderTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge className={STATUS_COLORS[order.status]}>
-                    {STATUS_LABELS[order.status]}
+                  <Badge className={STATUS_COLORS[(order.status ?? 'received') as OrderStatus]}>
+                    {STATUS_LABELS[(order.status ?? 'received') as OrderStatus]}
                   </Badge>
                 </TableCell>
                 <TableCell className="capitalize">

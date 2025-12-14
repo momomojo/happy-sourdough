@@ -7,11 +7,21 @@ import { MapPin, Calendar, Package, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import type { OrderWithDetails } from '@/lib/supabase/orders';
 
+interface DeliveryAddressType {
+  street?: string;
+  apt?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+}
+
 interface OrderDetailsProps {
   order: OrderWithDetails;
 }
 
 export function OrderDetails({ order }: OrderDetailsProps) {
+  // Cast delivery_address to the proper type
+  const deliveryAddress = order.delivery_address as DeliveryAddressType | null;
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -64,16 +74,16 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 <span>{formatCurrency(order.subtotal)}</span>
               </div>
 
-              {order.delivery_fee > 0 && (
+              {(order.delivery_fee ?? 0) > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Fee</span>
-                  <span>{formatCurrency(order.delivery_fee)}</span>
+                  <span>{formatCurrency(order.delivery_fee ?? 0)}</span>
                 </div>
               )}
 
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Tax</span>
-                <span>{formatCurrency(order.tax_amount)}</span>
+                <span>{formatCurrency(order.tax_amount ?? 0)}</span>
               </div>
 
               <Separator />
@@ -113,15 +123,15 @@ export function OrderDetails({ order }: OrderDetailsProps) {
           </div>
 
           {/* Delivery Address */}
-          {order.fulfillment_type === 'delivery' && order.delivery_address && (
+          {order.fulfillment_type === 'delivery' && deliveryAddress && (
             <div>
               <p className="mb-1 text-sm font-medium text-muted-foreground">Delivery Address</p>
               <p className="text-sm">
-                {order.delivery_address.street}
-                {order.delivery_address.apt && `, ${order.delivery_address.apt}`}
+                {deliveryAddress.street}
+                {deliveryAddress.apt && `, ${deliveryAddress.apt}`}
               </p>
               <p className="text-sm text-muted-foreground">
-                {order.delivery_address.city}, {order.delivery_address.state} {order.delivery_address.zip}
+                {deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.zip}
               </p>
               {order.notes && (
                 <p className="mt-2 text-sm italic text-muted-foreground">
@@ -183,7 +193,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
             <div>
               <p className="text-muted-foreground">Order Date</p>
               <p className="font-medium">
-                {format(new Date(order.created_at), 'MMM d, yyyy h:mm a')}
+                {order.created_at ? format(new Date(order.created_at), 'MMM d, yyyy h:mm a') : 'N/A'}
               </p>
             </div>
           </div>

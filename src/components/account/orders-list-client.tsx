@@ -57,7 +57,7 @@ export function OrdersListClient({ orders }: OrdersListClientProps) {
     // Apply filter
     if (filterBy === 'active') {
       filtered = filtered.filter(order =>
-        !['delivered', 'picked_up', 'cancelled', 'refunded'].includes(order.status)
+        !['delivered', 'picked_up', 'cancelled', 'refunded'].includes(order.status ?? '')
       );
     } else if (filterBy === 'completed') {
       filtered = filtered.filter(order =>
@@ -73,9 +73,9 @@ export function OrdersListClient({ orders }: OrdersListClientProps) {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date-desc':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
         case 'date-asc':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
         case 'total-desc':
           return b.total - a.total;
         case 'total-asc':
@@ -159,7 +159,7 @@ export function OrdersListClient({ orders }: OrdersListClientProps) {
       ) : (
         <div className="space-y-4">
           {filteredAndSortedOrders.map((order) => {
-            const orderDate = new Date(order.created_at);
+            const orderDate = new Date(order.created_at ?? Date.now());
             const deliveryDate = new Date(order.delivery_date);
 
             return (
@@ -197,9 +197,9 @@ export function OrdersListClient({ orders }: OrdersListClientProps) {
                     </div>
                     <div className="flex flex-col items-start sm:items-end gap-3">
                       <Badge
-                        className={`${statusColors[order.status]} font-semibold px-3 py-1 rounded-lg shadow-sm`}
+                        className={`${statusColors[(order.status ?? 'received') as OrderStatus]} font-semibold px-3 py-1 rounded-lg shadow-sm`}
                       >
-                        {statusLabels[order.status]}
+                        {statusLabels[(order.status ?? 'received') as OrderStatus]}
                       </Badge>
                       <p className="text-2xl font-bold text-primary">
                         ${order.total.toFixed(2)}

@@ -55,6 +55,11 @@ export function CartItem({ item }: CartItemProps) {
             <p className="text-xs text-muted-foreground truncate">
               {item.variantName}
             </p>
+            {item.special_instructions && (
+              <p className="text-xs text-muted-foreground italic mt-0.5 line-clamp-2">
+                &quot;{item.special_instructions}&quot;
+              </p>
+            )}
           </div>
 
           {/* Remove Button */}

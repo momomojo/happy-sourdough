@@ -2,6 +2,19 @@ import Link from 'next/link';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { getSocialLinks, getBusinessInfo } from '@/lib/business-settings';
 
+// Helper function to safely convert address to string
+function formatAddress(address: unknown): string {
+    if (typeof address === 'string') {
+        return address;
+    }
+    if (typeof address === 'object' && address !== null) {
+        const addr = address as { street?: string; city?: string; state?: string; zip?: string };
+        const parts = [addr.street, addr.city, addr.state, addr.zip].filter(Boolean);
+        return parts.length > 0 ? parts.join(', ') : 'Address unavailable';
+    }
+    return 'Address unavailable';
+}
+
 // Custom icons for TikTok and Yelp (not in lucide-react)
 function TikTokIcon({ className }: { className?: string }) {
     return (
@@ -48,7 +61,7 @@ export async function Footer() {
                         </p>
                         {/* Contact Info from settings */}
                         <div className="text-sm space-y-1">
-                            <p>{businessInfo.business_address}</p>
+                            <p>{formatAddress(businessInfo.business_address)}</p>
                             <p><a href={`tel:${businessInfo.business_phone}`} className="hover:text-primary transition-colors">{businessInfo.business_phone}</a></p>
                             <p><a href={`mailto:${businessInfo.business_email}`} className="hover:text-primary transition-colors">{businessInfo.business_email}</a></p>
                         </div>

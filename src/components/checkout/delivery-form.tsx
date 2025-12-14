@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PickupLocationSelector } from './pickup-location-selector';
 import { CheckoutFormData } from '@/types/checkout';
 import { DEFAULT_ZONES } from '@/lib/delivery-zones';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -251,16 +252,13 @@ export function DeliveryForm({ form, onDeliveryFeeChange }: DeliveryFormProps) {
 
       {/* Pickup Information */}
       {fulfillmentType === 'pickup' && (
-        <Alert>
-          <Package className="h-4 w-4" />
-          <AlertDescription>
-            <p className="font-medium">Happy Sourdough Bakery</p>
-            <p className="text-sm mt-1">123 Baker Street, Los Angeles, CA 90001</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Open daily 7am - 7pm
-            </p>
-          </AlertDescription>
-        </Alert>
+        <div className="space-y-4">
+          <Label>Select Pickup Location</Label>
+          <PickupLocationSelector
+            value={form.watch('pickupLocationId')}
+            onChange={(val) => form.setValue('pickupLocationId', val)}
+          />
+        </div>
       )}
 
       {/* Delivery Date & Time Selection */}
